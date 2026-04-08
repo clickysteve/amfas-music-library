@@ -64,7 +64,7 @@
   .filter-btn[data-filter="new"].active { background: var(--cyan); border-color: var(--cyan); color: #000; }
   .count-display { color: var(--muted); font-size: 11px; letter-spacing: 0.05em; margin-left: auto; white-space: nowrap; }
   .count-display strong { color: var(--acid); }
-  .loading-note { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; opacity: 0.7; white-space: nowrap; }
+  .loading-note { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; opacity: 0.7; white-space: nowrap; margin-bottom: 0.75rem; }
   main { padding: 1.5rem 2rem; }
   .tracks-grid { display: flex; flex-direction: column; gap: 0.4rem; }
   .track-card { background: var(--card); border: 1px solid var(--border); padding: 0; display: grid; grid-template-columns: 1fr 280px; transition: border-color 0.2s, background 0.2s; animation: fadeIn 0.3s ease both; position: relative; overflow: hidden; align-items: stretch; }
@@ -171,10 +171,10 @@
     <button class="filter-btn" data-filter="favourites">&#9829; Favs</button>
   </div>
   <div class="count-display"><strong id="visible-count">&mdash;</strong> tracks</div>
-  <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load</div>
 </div>
 
 <main>
+  <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load</div>
   <div class="tracks-grid" id="tracks-grid"></div>
 </main>
 
@@ -197,9 +197,9 @@
 </footer>
 
 <script>
-// ── CHANGE THIS to your Cloudflare Worker URL after deploying ──
+// ââ CHANGE THIS to your Cloudflare Worker URL after deploying ââ
 const API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
-// ────────────────────────────────────────────────────────────────
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 const COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
 const NEW_DAYS = 30; // tracks added in last N days get a "NEW" badge
@@ -209,7 +209,7 @@ let currentSearch = '';
 let currentAudio = null;
 let currentCard = null;
 
-// ── Favourites (localStorage) ──────────────────────────────────
+// ââ Favourites (localStorage) ââââââââââââââââââââââââââââââââââ
 function getFavs() {
   try { return JSON.parse(localStorage.getItem('amfas-favs') || '[]'); } catch(e) { return []; }
 }
@@ -224,7 +224,7 @@ function toggleFav(id) {
   setFavs(favs);
   return idx === -1; // returns true if now a fav
 }
-// ────────────────────────────────────────────────────────────────
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 function isNew(track) {
   if (!track.createdAt) return false;
@@ -397,7 +397,7 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
   });
 });
 
-// ── Event delegation on tracks grid ────────────────────────────
+// ââ Event delegation on tracks grid ââââââââââââââââââââââââââââ
 document.getElementById('tracks-grid').addEventListener('click', function(e) {
   // Clickable tag filtering
   var tag = e.target.closest('.tag-feel[data-feel]');
@@ -438,7 +438,7 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
     return;
   }
 });
-// ────────────────────────────────────────────────────────────────
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 loadTracks();
 </script>
