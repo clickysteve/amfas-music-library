@@ -14,18 +14,13 @@ exports.handler = async function(event, context) {
 
   const secret = process.env.NOTION_SECRET;
   if (!secret) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'NOTION_SECRET environment variable not set' }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'NOTION_SECRET not set' }) };
   }
 
   try {
     const allResults = [];
     let cursor = undefined;
 
-    // Notion paginates at 100 — loop until we have everything
     do {
       const body = {
         page_size: 100,
@@ -57,45 +52,56 @@ exports.handler = async function(event, context) {
 
     } while (cursor);
 
-    // Helper to extract values from Notion property types
+    // Extract text from any Notion property type
     const getText = (prop) => {
       if (!prop) return null;
       switch (prop.type) {
-        case 'title':     return prop.title?.map(t => t.plain_text).join('').trim() || null;
-        case 'rich_text': return prop.rich_text?.map(t => t.plain_text).join('').trim() || null;
-        case 'url':       return prop.url || null;
-        case 'select':    return prop.select?.name || null;
+        case 'title':        return prop.title?.map(t => t.plain_text).join('').trim() || null;
+        case 'rich_text':    return prop.rich_text?.map(t => t.plain_text).join('').trim() || null;
+        case 'url':          return prop.url || null;
+        case 'select':       return prop.select?.name || null;
         case 'multi_select': return prop.multi_select?.map(s => s.name) || [];
-        default:          return null;
+        case 'files':
+          // Notion file/media properties
+          if (prop.files && prop.files.length > 0) {
+            const f = prop.files[0];
+            return f.type === 'external' ? f.external?.url : f.file?.url || null;
+          }
+          return null;
+        default: return null;
       }
     };
 
     const tracks = allResults.map((page) => {
       const p = page.properties;
 
-      const workingTitle = getText(p['aka (working title)']) || 'Untitled';
+      // Log property names from the first page to help debug
+      const propNames = Object.keys(p);
+
+      const workingTitle = getText(p['aka (working title)']) || getText(p['Name']) || 'Untitled';
       const finalName    = getText(p['Final Name (if exists)']) || null;
 
-      // Feel/genre — try multi_select first, fall back to rich_text
+      // Feel/genre
       let feel = getText(p['How does it sound?']) || [];
       if (typeof feel === 'string') {
         feel = feel.split(/[,\/]/).map(s => s.trim()).filter(Boolean);
       }
 
-      const audio = getText(p['AUDIO']) || null;
+      // Audio — try multiple possible property names
+      const audio = getText(p['AUDIO']) || getText(p['Audio']) || getText(p['audio']) || null;
 
-      // Gear — try rich_text, split on commas
-      let gear = getText(p['Gear Used']) || [];
+      // Gear
+      let gear = getText(p['Gear Used']) || getText(p['gear']) || [];
       if (typeof gear === 'string') {
         gear = gear.split(',').map(s => s.trim()).filter(Boolean);
       }
 
-      const hasVocals = feel.some(f =>
-        f.toLowerCase().includes('vocal') || f.toLowerCase().includes('has vocal')
+      const hasVocals = (Array.isArray(feel) ? feel : [feel]).some(f =>
+        f && (f.toLowerCase().includes('vocal') || f.toLowerCase().includes('has vocal'))
       );
-
-      // Remove "has vocals" from feel tags since we handle it separately
-      const feelClean = feel.filter(f => !f.toLowerCase().includes('has vocal'));
+      const feelClean = (Array.isArray(feel) ? feel : [feel]).filter(f =>
+        f && !f.toLowerCase().includes('has vocal')
+      );
 
       return {
         id: page.id,
@@ -105,8 +111,14 @@ exports.handler = async function(event, context) {
         audio,
         gear: Array.isArray(gear) ? gear : [],
         hasVocals,
+        // Include property names in first result only for debugging
+        _propNames: propNames,
       };
     });
+
+    // Strip debug info after first track
+    const firstTrack = tracks[0];
+    tracks.slice(1).forEach(t => delete t._propNames);
 
     return {
       statusCode: 200,
