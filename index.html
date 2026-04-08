@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The AMFAS Music Library — allmyfriendsaresynths</title>
+<title>The AMFAS Music Library â allmyfriendsaresynths</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
@@ -113,9 +113,9 @@
   <div class="header-body">
     <div class="header-desc">
       <p>Below is a database of music that I (aka <strong>Stephen McLeod</strong> aka <em>allmyfriendsaresynths</em>) have created over the last few years. This resource is shared publicly for independent artists, film-makers, vloggers, and other creative folks to use in their projects.</p>
-      <p>These tracks are completely free to use for non-commercial work — provided that you include a credit to <strong>'Stephen McLeod aka allmyfriendsaresynths'</strong> and link back to <a href="https://musiclibrary.allmyfriendsaresynths.com">musiclibrary.allmyfriendsaresynths.com</a>. Usage for political works is not permitted without prior permission. This material is released under a <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">Creative Commons CC BY-NC-SA 4.0</a> license.</p>
-      <p>'Non-commercial' use will generally include incidental revenue — meaning you are fine to use these tracks on monetised YouTube videos, so long as the primary purpose isn't commercial. Including the music as background for your vlog? <strong>Fine.</strong> Uploading a video with the music purely to generate AdSense cash? <strong>Not fine.</strong></p>
-      <p>These tracks may use uncleared samples and are offered without any guarantee or warranty whatsoever and with absolutely no acceptance of liability. For anything. At all. <em>Caveat Emptor.</em> All other rights reserved. If you'd like to share what you've done, feel free to <a href="mailto:allmyfas@gmail.com">drop me a note</a> — I'd love to hear.</p>
+      <p>These tracks are completely free to use for non-commercial work â provided that you include a credit to <strong>'Stephen McLeod aka allmyfriendsaresynths'</strong> and link back to <a href="https://musiclibrary.allmyfriendsaresynths.com">musiclibrary.allmyfriendsaresynths.com</a>. Usage for political works is not permitted without prior permission. This material is released under a <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">Creative Commons CC BY-NC-SA 4.0</a> license.</p>
+      <p>'Non-commercial' use will generally include incidental revenue â meaning you are fine to use these tracks on monetised YouTube videos, so long as the primary purpose isn't commercial. Including the music as background for your vlog? <strong>Fine.</strong> Uploading a video with the music purely to generate AdSense cash? <strong>Not fine.</strong></p>
+      <p>These tracks may use uncleared samples and are offered without any guarantee or warranty whatsoever and with absolutely no acceptance of liability. For anything. At all. <em>Caveat Emptor.</em> All other rights reserved. If you'd like to share what you've done, feel free to <a href="mailto:allmyfas@gmail.com">drop me a note</a> â I'd love to hear.</p>
       <div class="license-badge">&#x2696; CC BY-NC-SA 4.0 &mdash; Free for non-commercial use</div>
     </div>
     <div class="header-video">
@@ -167,6 +167,10 @@
 </footer>
 
 <script>
+// ── CHANGE THIS to your Cloudflare Worker URL after deploying ──
+const API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
+// ────────────────────────────────────────────────────────────────
+
 const COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
 let TRACKS = [];
 let currentFilter = 'has-audio';
@@ -245,7 +249,7 @@ function render() {
         audio.pause(); state = 'idle'; btn.innerHTML = '&#9654;'; card.classList.remove('playing');
         return;
       }
-      // State is idle — start playing
+      // State is idle â start playing
       if (currentAudio && currentAudio !== audio) { currentAudio.pause(); currentAudio.removeAttribute('src'); currentAudio.load(); }
       if (currentCard) {
         currentCard.classList.remove('playing'); currentCard.classList.remove('loading');
@@ -301,7 +305,7 @@ function showState(icon, message, isError) {
 function loadTracks() {
   showState('spinning', 'Loading music database...');
   document.getElementById('tracks-grid').innerHTML = '<div class="state-message"><span class="icon spinning">&#x21BB;</span>Loading music database...</div>';
-  fetch('/.netlify/functions/tracks')
+  fetch(API_URL)
     .then(function(res) {
       if (!res.ok) throw new Error('Server error: ' + res.status);
       return res.json();
