@@ -2,13 +2,6 @@
   publish = "."
   functions = "netlify/functions"
 
-[functions]
-  node_bundler = "esbuild"
-
-[[functions]]
-  path = "/netlify/functions/tracks"
-  timeout = 26
-
 [[headers]]
   for = "/*"
   [headers.values]
