@@ -187,7 +187,7 @@ function buildCard(track, idx) {
   const feelTags = (track.feel || []).slice(0, 5).map(f => '<span class="tag tag-feel">' + f + '</span>').join('');
   const gearStr = (track.gear || []).join(', ');
   const audioSection = audioUrl
-    ? '<div class="player"><audio id="audio-' + safeId + '" preload="none" src="' + audioUrl + '" crossorigin="anonymous"></audio><div class="player-controls"><button class="play-btn" id="playbtn-' + safeId + '" aria-label="Play">&#9654;</button><div class="progress-wrap" id="prog-' + safeId + '"><div class="progress-fill" id="fill-' + safeId + '"></div></div><div class="player-time" id="time-' + safeId + '">0:00</div></div><a class="download-link" href="' + track.audio + '" target="_blank">&darr; download</a></div>'
+    ? '<div class="player"><audio id="audio-' + safeId + '" preload="none" src="' + audioUrl + '"></audio><div class="player-controls"><button class="play-btn" id="playbtn-' + safeId + '" aria-label="Play">&#9654;</button><div class="progress-wrap" id="prog-' + safeId + '"><div class="progress-fill" id="fill-' + safeId + '"></div></div><div class="player-time" id="time-' + safeId + '">0:00</div></div><a class="download-link" href="' + track.audio + '" target="_blank">&darr; download</a></div>'
     : '<div class="no-audio">no audio yet</div>';
   return '<div class="track-card" id="card-' + safeId + '" style="--track-color:' + colour + '"><div class="track-main"><div class="track-header"><div class="track-title">' + displayTitle + '</div></div><div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel">vocals</span>' : '') + '</div><div class="track-gear"><strong>gear used:</strong> ' + (gearStr || '&mdash;') + '</div></div><div class="track-audio-col">' + audioSection + '</div></div>';
 }
@@ -265,8 +265,8 @@ function showState(icon, message, isError) {
 }
 
 function loadTracks() {
-  showState('spinning', 'Loading Music Database...');
-  document.getElementById('tracks-grid').innerHTML = '<div class="state-message"><span class="icon spinning">&#x21BB;</span>Loading Music Database...</div>';
+  showState('spinning', 'Loading music database...');
+  document.getElementById('tracks-grid').innerHTML = '<div class="state-message"><span class="icon spinning">&#x21BB;</span>Loading music database...</div>';
   fetch('/.netlify/functions/tracks')
     .then(function(res) {
       if (!res.ok) throw new Error('Server error: ' + res.status);
