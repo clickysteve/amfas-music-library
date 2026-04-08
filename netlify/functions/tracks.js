@@ -24,7 +24,7 @@ exports.handler = async function(event, context) {
     do {
       const body = {
         page_size: 100,
-        sorts: [{ timestamp: 'created_time', direction: 'ascending' }],
+        sorts: [{ timestamp: 'created_time', direction: 'descending' }],
       };
       if (cursor) body.start_cursor = cursor;
 
