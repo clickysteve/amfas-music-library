@@ -265,8 +265,8 @@ function showState(icon, message, isError) {
 }
 
 function loadTracks() {
-  showState('spinning', 'Loading from Notion...');
-  document.getElementById('tracks-grid').innerHTML = '<div class="state-message"><span class="icon spinning">&#x21BB;</span>Loading from Notion...</div>';
+  showState('spinning', 'Loading Music Database...');
+  document.getElementById('tracks-grid').innerHTML = '<div class="state-message"><span class="icon spinning">&#x21BB;</span>Loading Music Database...</div>';
   fetch('/.netlify/functions/tracks')
     .then(function(res) {
       if (!res.ok) throw new Error('Server error: ' + res.status);
