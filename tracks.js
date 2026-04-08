@@ -1,4 +1,4 @@
-const DATABASE_ID = '1aa9e578d459803a92cfd36590e5ee53';
+const DATABASE_ID = '2fd3666f9ff3475cbd14051cee4c9318';
 const NOTION_VERSION = '2022-06-28';
 
 exports.handler = async function(event, context) {
