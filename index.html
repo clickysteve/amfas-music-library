@@ -187,7 +187,7 @@ function buildCard(track, idx) {
   const feelTags = (track.feel || []).slice(0, 5).map(f => '<span class="tag tag-feel">' + f + '</span>').join('');
   const gearStr = (track.gear || []).join(', ');
   const audioSection = audioUrl
-    ? '<div class="player"><audio id="audio-' + safeId + '" preload="none" src="' + audioUrl + '"></audio><div class="player-controls"><button class="play-btn" id="playbtn-' + safeId + '" aria-label="Play">&#9654;</button><div class="progress-wrap" id="prog-' + safeId + '"><div class="progress-fill" id="fill-' + safeId + '"></div></div><div class="player-time" id="time-' + safeId + '">0:00</div></div><a class="download-link" href="' + audioUrl + '" download>&darr; download</a></div>'
+    ? '<div class="player"><audio id="audio-' + safeId + '" preload="none" src="' + audioUrl + '"></audio><div class="player-controls"><button class="play-btn" id="playbtn-' + safeId + '" aria-label="Play">&#9654;</button><div class="progress-wrap" id="prog-' + safeId + '"><div class="progress-fill" id="fill-' + safeId + '"></div></div><div class="player-time" id="time-' + safeId + '">0:00</div></div><a class="download-link" href="#" id="dl-' + safeId + '" data-url="' + audioUrl + '" data-name="' + (displayTitle.replace(/[^a-zA-Z0-9 _-]/g,'') || 'track') + '.wav">&darr; download</a></div>'
     : '<div class="no-audio">no audio yet</div>';
   return '<div class="track-card" id="card-' + safeId + '" style="--track-color:' + colour + '"><div class="track-main"><div class="track-header"><div class="track-title">' + displayTitle + '</div></div><div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel">vocals</span>' : '') + '</div><div class="track-gear"><strong>gear used:</strong> ' + (gearStr || '&mdash;') + '</div></div><div class="track-audio-col">' + audioSection + '</div></div>';
 }
@@ -224,37 +224,49 @@ function render() {
 
     function fmt(s) { return Math.floor(s/60) + ':' + Math.floor(s%60).toString().padStart(2,'0'); }
 
+    var isLoading = false;
     btn.addEventListener('click', function() {
-      if (audio.paused) {
-        // Stop any currently playing track
-        if (currentAudio && currentAudio !== audio) { currentAudio.pause(); currentAudio.currentTime = 0; }
-        if (currentCard) {
-          currentCard.classList.remove('playing'); currentCard.classList.remove('loading');
-          var ob = currentCard.querySelector('.play-btn'); if (ob) ob.innerHTML = '&#9654;';
-          var of = currentCard.querySelector('.progress-fill'); if (of) of.style.width = '0%';
-        }
-        currentAudio = audio; currentCard = card;
-        // Show loading state
-        card.classList.add('loading');
-        btn.innerHTML = '&#x21BB;'; btn.classList.add('spinning');
-        timeEl.textContent = 'loading\u2026';
-        // Wait for enough data to play
-        function tryPlay() {
-          audio.play().then(function() {
-            btn.classList.remove('spinning');
-            card.classList.remove('loading'); card.classList.add('playing');
-            btn.innerHTML = '&#9646;&#9646;';
-          }).catch(function() {
-            btn.classList.remove('spinning');
-            btn.innerHTML = '&#9654;'; card.classList.remove('playing'); card.classList.remove('loading');
-            timeEl.textContent = '0:00';
-          });
-        }
-        if (audio.readyState >= 2) { tryPlay(); }
-        else { audio.addEventListener('canplay', function handler() { audio.removeEventListener('canplay', handler); tryPlay(); }); audio.load(); }
-      } else {
-        audio.pause(); btn.innerHTML = '&#9654;'; card.classList.remove('playing');
+      // If loading, cancel it
+      if (isLoading) {
+        isLoading = false; audio.pause(); audio.currentTime = 0;
+        btn.classList.remove('spinning'); btn.innerHTML = '&#9654;';
+        card.classList.remove('playing'); card.classList.remove('loading');
+        timeEl.textContent = '0:00';
+        return;
       }
+      // If playing, pause it
+      if (!audio.paused) {
+        audio.pause(); btn.innerHTML = '&#9654;'; card.classList.remove('playing');
+        return;
+      }
+      // Otherwise, start playing
+      // Stop any currently playing track
+      if (currentAudio && currentAudio !== audio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+      if (currentCard) {
+        currentCard.classList.remove('playing'); currentCard.classList.remove('loading');
+        var ob = currentCard.querySelector('.play-btn'); if (ob) { ob.innerHTML = '&#9654;'; ob.classList.remove('spinning'); }
+        var of = currentCard.querySelector('.progress-fill'); if (of) of.style.width = '0%';
+      }
+      currentAudio = audio; currentCard = card;
+      // Show loading state
+      isLoading = true;
+      card.classList.add('loading');
+      btn.innerHTML = '&#x21BB;'; btn.classList.add('spinning');
+      timeEl.textContent = 'loading\u2026';
+      function tryPlay() {
+        if (!isLoading) return;
+        audio.play().then(function() {
+          isLoading = false; btn.classList.remove('spinning');
+          card.classList.remove('loading'); card.classList.add('playing');
+          btn.innerHTML = '&#9646;&#9646;';
+        }).catch(function() {
+          isLoading = false; btn.classList.remove('spinning');
+          btn.innerHTML = '&#9654;'; card.classList.remove('playing'); card.classList.remove('loading');
+          timeEl.textContent = '0:00';
+        });
+      }
+      if (audio.readyState >= 2) { tryPlay(); }
+      else { audio.addEventListener('canplay', function handler() { audio.removeEventListener('canplay', handler); tryPlay(); }); audio.load(); }
     });
 
     audio.addEventListener('timeupdate', function() {
@@ -273,6 +285,24 @@ function render() {
       var rect = prog.getBoundingClientRect();
       audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
     });
+
+    var dlLink = document.getElementById('dl-' + safeId);
+    if (dlLink) {
+      dlLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        var url = dlLink.dataset.url;
+        var name = dlLink.dataset.name;
+        dlLink.textContent = 'downloading\u2026';
+        fetch(url).then(function(r) { return r.blob(); }).then(function(blob) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = name;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
+          dlLink.innerHTML = '&darr; download';
+        }).catch(function() { dlLink.innerHTML = '&darr; download failed'; });
+      });
+    }
   });
 }
 
