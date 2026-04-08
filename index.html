@@ -224,23 +224,23 @@ function render() {
 
     function fmt(s) { return Math.floor(s/60) + ':' + Math.floor(s%60).toString().padStart(2,'0'); }
 
-    var isLoading = false;
+    var state = 'idle'; // idle | loading | playing
+    function resetUI() {
+      state = 'idle'; btn.classList.remove('spinning'); btn.innerHTML = '&#9654;';
+      card.classList.remove('playing'); card.classList.remove('loading');
+    }
     btn.addEventListener('click', function() {
-      // If loading, cancel it
-      if (isLoading) {
-        isLoading = false; audio.pause(); audio.currentTime = 0;
-        btn.classList.remove('spinning'); btn.innerHTML = '&#9654;';
-        card.classList.remove('playing'); card.classList.remove('loading');
-        timeEl.textContent = '0:00';
+      if (state === 'loading') {
+        // Cancel loading
+        audio.pause(); audio.currentTime = 0; resetUI(); timeEl.textContent = '0:00';
         return;
       }
-      // If playing, pause it
-      if (!audio.paused) {
-        audio.pause(); btn.innerHTML = '&#9654;'; card.classList.remove('playing');
+      if (state === 'playing') {
+        // Pause
+        audio.pause(); state = 'idle'; btn.innerHTML = '&#9654;'; card.classList.remove('playing');
         return;
       }
-      // Otherwise, start playing
-      // Stop any currently playing track
+      // State is idle — start playing
       if (currentAudio && currentAudio !== audio) { currentAudio.pause(); currentAudio.currentTime = 0; }
       if (currentCard) {
         currentCard.classList.remove('playing'); currentCard.classList.remove('loading');
@@ -248,21 +248,18 @@ function render() {
         var of = currentCard.querySelector('.progress-fill'); if (of) of.style.width = '0%';
       }
       currentAudio = audio; currentCard = card;
-      // Show loading state
-      isLoading = true;
+      state = 'loading';
       card.classList.add('loading');
       btn.innerHTML = '&#x21BB;'; btn.classList.add('spinning');
       timeEl.textContent = 'loading\u2026';
       function tryPlay() {
-        if (!isLoading) return;
+        if (state !== 'loading') return;
         audio.play().then(function() {
-          isLoading = false; btn.classList.remove('spinning');
+          state = 'playing'; btn.classList.remove('spinning');
           card.classList.remove('loading'); card.classList.add('playing');
           btn.innerHTML = '&#9646;&#9646;';
         }).catch(function() {
-          isLoading = false; btn.classList.remove('spinning');
-          btn.innerHTML = '&#9654;'; card.classList.remove('playing'); card.classList.remove('loading');
-          timeEl.textContent = '0:00';
+          resetUI(); timeEl.textContent = '0:00';
         });
       }
       if (audio.readyState >= 2) { tryPlay(); }
@@ -277,7 +274,7 @@ function render() {
     });
 
     audio.addEventListener('ended', function() {
-      btn.innerHTML = '&#9654;'; fill.style.width = '0%'; timeEl.textContent = '0:00'; card.classList.remove('playing'); card.classList.remove('loading');
+      resetUI(); fill.style.width = '0%'; timeEl.textContent = '0:00';
     });
 
     prog.addEventListener('click', function(e) {
@@ -288,18 +285,21 @@ function render() {
 
     var dlLink = document.getElementById('dl-' + safeId);
     if (dlLink) {
+      var downloading = false;
       dlLink.addEventListener('click', function(e) {
-        e.preventDefault();
+        e.preventDefault(); e.stopPropagation();
+        if (downloading) return;
+        downloading = true;
         var url = dlLink.dataset.url;
         var name = dlLink.dataset.name;
         dlLink.textContent = 'downloading\u2026';
         fetch(url).then(function(r) { return r.blob(); }).then(function(blob) {
+          var blobUrl = URL.createObjectURL(blob);
           var a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = name;
-          document.body.appendChild(a); a.click(); document.body.removeChild(a);
-          URL.revokeObjectURL(a.href);
-          dlLink.innerHTML = '&darr; download';
+          a.href = blobUrl; a.download = name; a.style.display = 'none';
+          document.body.appendChild(a); a.click();
+          setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 1000);
+          dlLink.innerHTML = '&darr; download'; downloading = false;
         }).catch(function() { dlLink.innerHTML = '&darr; download failed'; });
       });
     }
