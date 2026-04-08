@@ -29,7 +29,8 @@
     --cyan: #00e5ff; --mono: 'Space Mono', monospace; --display: 'Unbounded', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 16px; min-height: 100vh; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 16px; min-height: 100vh; overflow-x: hidden; transition: padding-bottom 0.3s; }
+  body.has-mini-player { padding-bottom: 72px; }
   body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 999; opacity: 0.5; }
   header { padding: 2.5rem 2rem 2rem; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
   header::before { content: ''; position: absolute; top: -80px; left: -80px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,170,0,0.14) 0%, transparent 70%); pointer-events: none; }
@@ -62,16 +63,22 @@
   .filter-btn[data-filter="favourites"].active { background: #ff2255; border-color: #ff2255; color: #fff; }
   .filter-btn[data-filter="new"] { border-color: rgba(0,229,255,0.4); color: var(--cyan); }
   .filter-btn[data-filter="new"].active { background: var(--cyan); border-color: var(--cyan); color: #000; }
+  .shuffle-btn { border-color: rgba(255,170,0,0.3); color: var(--acid); }
+  .shuffle-btn:hover { border-color: var(--acid); background: rgba(255,170,0,0.1); color: var(--acid); }
+  .sort-select { background: var(--card); border: 1px solid var(--border); color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; padding: 0.35rem 0.5rem; cursor: pointer; outline: none; transition: border-color 0.2s; }
+  .sort-select:focus { border-color: var(--acid); }
+  .sort-select option { background: var(--card); color: var(--text); }
   .count-display { color: var(--muted); font-size: 11px; letter-spacing: 0.05em; margin-left: auto; white-space: nowrap; }
   .count-display strong { color: var(--acid); }
   .loading-note { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; opacity: 0.7; white-space: nowrap; margin-bottom: 0.75rem; text-align: right; }
   main { padding: 1.5rem 2rem; }
   .tracks-grid { display: flex; flex-direction: column; gap: 0.4rem; }
-  .track-card { background: var(--card); border: 1px solid var(--border); padding: 0; display: grid; grid-template-columns: 1fr 280px; transition: border-color 0.2s, background 0.2s; animation: fadeIn 0.3s ease both; position: relative; overflow: hidden; align-items: stretch; }
+  .track-card { background: var(--card); border: 1px solid var(--border); padding: 0; display: grid; grid-template-columns: 1fr 280px; transition: border-color 0.2s, background 0.2s, box-shadow 0.5s; animation: fadeIn 0.3s ease both; position: relative; overflow: hidden; align-items: stretch; }
   .track-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--track-color, var(--acid)); opacity: 0.7; }
   .track-card:hover { border-color: var(--track-color, var(--acid)); background: #211a08; }
   .track-card.playing { border-color: var(--track-color, var(--acid)); background: #211a08; }
   .track-card.playing::before { opacity: 1; }
+  .track-card.highlighted { border-color: var(--cyan) !important; box-shadow: 0 0 25px rgba(0,229,255,0.2); }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .track-main { min-width: 0; padding: 0.75rem 1.25rem; }
   .track-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.8rem; margin-bottom: 0.35rem; }
@@ -108,6 +115,25 @@
   .state-message.error { color: var(--hot); }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .spinning { display: inline-block; animation: spin 1s linear infinite; }
+
+  /* ââ Mini Player ââââââââââââââââââââââââââââââââââââââââââââââ */
+  .mini-player { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #0f0d08; border-top: 2px solid var(--border); transform: translateY(100%); transition: transform 0.3s ease; }
+  .mini-player.active { transform: translateY(0); }
+  .mini-player-inner { display: flex; align-items: center; gap: 1rem; padding: 0.6rem 2rem; }
+  .mini-controls { display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0; }
+  .mini-btn { background: none; border: 1px solid var(--border); color: var(--muted); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; transition: all 0.15s; border-radius: 3px; }
+  .mini-btn:hover { border-color: var(--acid); color: var(--acid); }
+  .mini-play { width: 38px; height: 38px; border-radius: 50%; background: var(--acid); border: none; color: #000; font-size: 14px; }
+  .mini-play:hover { opacity: 0.85; }
+  .mini-info { flex: 1; min-width: 0; }
+  .mini-title { font-family: var(--display); font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.3rem; color: var(--text); }
+  .mini-progress-wrap { height: 4px; background: var(--border); cursor: pointer; position: relative; border-radius: 2px; overflow: hidden; }
+  .mini-progress-fill { height: 100%; width: 0%; background: var(--acid); border-radius: 2px; pointer-events: none; transition: width 0.1s linear; }
+  .mini-time { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; min-width: 80px; text-align: right; }
+  .mini-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 0.3rem; transition: color 0.15s; flex-shrink: 0; }
+  .mini-close:hover { color: var(--hot); }
+  .kbd-hint { font-size: 9px; color: var(--border); letter-spacing: 0.08em; position: absolute; right: 2rem; bottom: calc(100% + 0.3rem); pointer-events: none; }
+
   footer { border-top: 1px solid var(--border); padding: 2rem; margin-top: 3rem; color: var(--muted); font-size: 11px; line-height: 1.8; display: flex; flex-wrap: wrap; gap: 1rem 3rem; justify-content: space-between; }
   footer a { color: var(--cyan); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
@@ -123,6 +149,10 @@
     .track-card { grid-template-columns: 1fr; }
     .track-audio-col { border-left: none; border-top: 1px solid var(--border); }
     .track-card:hover .track-audio-col, .track-card.playing .track-audio-col { border-top-color: var(--track-color, var(--acid)); border-left-color: transparent; }
+    .mini-player-inner { padding: 0.5rem 1rem; gap: 0.6rem; }
+    .mini-time { display: none; }
+    .mini-title { font-size: 11px; }
+    .sort-select { font-size: 10px; }
   }
 </style>
 </head>
@@ -170,11 +200,18 @@
     <button class="filter-btn" data-filter="new">New</button>
     <button class="filter-btn" data-filter="favourites">&#9829; Favs</button>
   </div>
+  <button class="filter-btn shuffle-btn" id="shuffle-btn" title="Play a random track">&#x21BB; Shuffle</button>
+  <select class="sort-select" id="sort-select" title="Sort tracks">
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+    <option value="az">A &rarr; Z</option>
+    <option value="za">Z &rarr; A</option>
+  </select>
   <div class="count-display"><strong id="visible-count">&mdash;</strong> tracks</div>
 </div>
 
 <main>
-  <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load</div>
+  <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load &middot; spacebar = play/pause</div>
   <div class="tracks-grid" id="tracks-grid"></div>
 </main>
 
@@ -196,20 +233,55 @@
   </div>
 </footer>
 
+<!-- ââ Mini Player ââââââââââââââââââââââââââââââââââââââââââââââââ -->
+<div class="mini-player" id="mini-player">
+  <span class="kbd-hint">spacebar = play/pause</span>
+  <div class="mini-player-inner">
+    <div class="mini-controls">
+      <button class="mini-btn" id="mini-prev" title="Previous track">&#x23EE;</button>
+      <button class="mini-play" id="mini-play" title="Play / Pause">&#9654;</button>
+      <button class="mini-btn" id="mini-next" title="Next track">&#x23ED;</button>
+    </div>
+    <div class="mini-info">
+      <div class="mini-title" id="mini-title"></div>
+      <div class="mini-progress-wrap" id="mini-prog">
+        <div class="mini-progress-fill" id="mini-fill"></div>
+      </div>
+    </div>
+    <div class="mini-time" id="mini-time">0:00</div>
+    <button class="mini-close" id="mini-close" title="Close player">&times;</button>
+  </div>
+</div>
+
 <script>
-// Ã¢ÂÂÃ¢ÂÂ CHANGE THIS to your Cloudflare Worker URL after deploying Ã¢ÂÂÃ¢ÂÂ
-const API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
-// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// ââ CONFIG âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+var API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
+var COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
+var NEW_DAYS = 30;
 
-const COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
-const NEW_DAYS = 30; // tracks added in last N days get a "NEW" badge
-let TRACKS = [];
-let currentFilter = 'has-audio';
-let currentSearch = '';
-let currentAudio = null;
-let currentCard = null;
+// ââ STATE ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+var TRACKS = [];
+var currentFilter = 'has-audio';
+var currentSearch = '';
+var currentSort = 'newest';
+var currentTrackId = null;
+var playerState = 'idle'; // idle | loading | playing | paused
+var animFrameId = null;
+var pendingDeepLink = null;
 
-// Ã¢ÂÂÃ¢ÂÂ Favourites (localStorage) Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// ââ GLOBAL AUDIO âââââââââââââââââââââââââââââââââââââââââââââââ
+var globalAudio = new Audio();
+globalAudio.preload = 'none';
+
+// ââ DOM REFS âââââââââââââââââââââââââââââââââââââââââââââââââââ
+var miniPlayer = document.getElementById('mini-player');
+var miniPlayBtn = document.getElementById('mini-play');
+var miniTitle = document.getElementById('mini-title');
+var miniFill = document.getElementById('mini-fill');
+var miniProg = document.getElementById('mini-prog');
+var miniTime = document.getElementById('mini-time');
+
+// ââ FAVOURITES âââââââââââââââââââââââââââââââââââââââââââââââââ
 function getFavs() {
   try { return JSON.parse(localStorage.getItem('amfas-favs') || '[]'); } catch(e) { return []; }
 }
@@ -222,16 +294,14 @@ function toggleFav(id) {
   var idx = favs.indexOf(id);
   if (idx === -1) { favs.push(id); } else { favs.splice(idx, 1); }
   setFavs(favs);
-  return idx === -1; // returns true if now a fav
+  return idx === -1;
 }
-// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
+// ââ HELPERS ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function isNew(track) {
   if (!track.createdAt) return false;
-  var diff = Date.now() - new Date(track.createdAt).getTime();
-  return diff < NEW_DAYS * 24 * 60 * 60 * 1000;
+  return (Date.now() - new Date(track.createdAt).getTime()) < NEW_DAYS * 24 * 60 * 60 * 1000;
 }
-
 function toStreamUrl(url) {
   if (!url) return null;
   return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[&?]dl=\d/, '');
@@ -240,33 +310,28 @@ function toDownloadUrl(url) {
   if (!url) return null;
   return url.replace('dl=0', 'dl=1');
 }
+function fmt(s) {
+  if (!s || !isFinite(s)) return '0:00';
+  return Math.floor(s / 60) + ':' + Math.floor(s % 60).toString().padStart(2, '0');
+}
+function safeId(id) { return id.replace(/-/g, '').slice(0, 20); }
 
-function buildCard(track, idx) {
-  var colour = COLOURS[idx % COLOURS.length];
-  var safeId = track.id.replace(/-/g, '').slice(0, 20);
-  var streamUrl = toStreamUrl(track.audio);
-  var downloadUrl = toDownloadUrl(track.audio);
-  var displayTitle = track.finalName || track.title;
-  var newBadge = isNew(track) ? '<span class="tag badge-new">NEW</span>' : '';
-  var feelTags = (track.feel || []).slice(0, 5).map(function(f) { return '<span class="tag tag-feel" data-feel="' + f.toLowerCase() + '" title="Click to filter by ' + f + '">' + f + '</span>'; }).join('');
-  var gearStr = (track.gear || []).join(', ');
-  var favActive = isFav(track.id) ? ' is-fav' : '';
-
-  var audioSection = streamUrl
-    ? '<div class="player"><audio id="audio-' + safeId + '" preload="none"></audio><div class="player-controls"><button class="play-btn" id="playbtn-' + safeId + '" aria-label="Play" data-stream="' + streamUrl + '">&#9654;</button><div class="progress-wrap" id="prog-' + safeId + '"><div class="progress-fill" id="fill-' + safeId + '"></div></div><div class="player-time" id="time-' + safeId + '">0:00</div></div><a class="download-link" href="' + downloadUrl + '" target="_blank">&darr; download</a></div>'
-    : '<div class="no-audio">no audio yet</div>';
-
-  var actionsRow = '<div class="track-actions">'
-    + '<button class="action-btn copy-credit-btn" data-track-name="' + displayTitle.replace(/"/g, '&quot;') + '" title="Copy credit line to clipboard">&#x2398; credit</button>'
-    + '<button class="action-btn fav-btn' + favActive + '" data-track-id="' + track.id + '" title="' + (isFav(track.id) ? 'Remove from favourites' : 'Add to favourites') + '">' + (isFav(track.id) ? '&#9829;' : '&#9825;') + '</button>'
-    + '</div>';
-
-  return '<div class="track-card" id="card-' + safeId + '" style="--track-color:' + colour + '"><div class="track-main"><div class="track-header"><div class="track-title">' + displayTitle + '</div>' + newBadge + '</div><div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel" data-feel="has-vocals" title="Click to filter by vocals">vocals</span>' : '') + '</div><div class="track-gear"><strong>gear used:</strong> ' + (gearStr || '&mdash;') + '</div>' + actionsRow + '</div><div class="track-audio-col">' + audioSection + '</div></div>';
+// ââ SORT âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+function getSorted(tracks) {
+  var sorted = tracks.slice();
+  switch (currentSort) {
+    case 'newest': sorted.sort(function(a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); }); break;
+    case 'oldest': sorted.sort(function(a, b) { return new Date(a.createdAt || 0) - new Date(b.createdAt || 0); }); break;
+    case 'az': sorted.sort(function(a, b) { return (a.finalName || a.title).localeCompare(b.finalName || b.title); }); break;
+    case 'za': sorted.sort(function(a, b) { return (b.finalName || b.title).localeCompare(a.finalName || a.title); }); break;
+  }
+  return sorted;
 }
 
+// ââ FILTER ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function getFiltered() {
   var favs = getFavs();
-  return TRACKS.filter(function(t) {
+  var filtered = TRACKS.filter(function(t) {
     var q = currentSearch.toLowerCase();
     var searchMatch = !q || [t.title, t.finalName].concat(t.feel || []).concat(t.gear || []).filter(Boolean).some(function(s) { return s.toLowerCase().includes(q); });
     var filterMatch = true;
@@ -277,88 +342,298 @@ function getFiltered() {
     else if (currentFilter !== 'all') filterMatch = (t.feel || []).some(function(f) { return f.toLowerCase() === currentFilter; });
     return searchMatch && filterMatch;
   });
+  return getSorted(filtered);
 }
 
+// ââ PLAYER âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+function playTrack(trackId) {
+  var track = TRACKS.find(function(t) { return t.id === trackId; });
+  if (!track || !track.audio) return;
+
+  // Same track: toggle
+  if (currentTrackId === trackId) {
+    if (playerState === 'playing') {
+      globalAudio.pause();
+      playerState = 'paused';
+      updateAllUI();
+      stopAnimLoop();
+      return;
+    }
+    if (playerState === 'paused') {
+      globalAudio.play();
+      playerState = 'playing';
+      updateAllUI();
+      startAnimLoop();
+      return;
+    }
+    if (playerState === 'loading') {
+      globalAudio.pause();
+      globalAudio.removeAttribute('src');
+      globalAudio.load();
+      currentTrackId = null;
+      playerState = 'idle';
+      updateAllUI();
+      stopAnimLoop();
+      return;
+    }
+  }
+
+  // New track
+  if (playerState !== 'idle') {
+    globalAudio.pause();
+    stopAnimLoop();
+  }
+
+  currentTrackId = trackId;
+  playerState = 'loading';
+  updateAllUI();
+
+  globalAudio.src = toStreamUrl(track.audio);
+
+  function onCanPlay() {
+    globalAudio.removeEventListener('canplay', onCanPlay);
+    if (playerState !== 'loading' || currentTrackId !== trackId) return;
+    globalAudio.play().then(function() {
+      playerState = 'playing';
+      updateAllUI();
+      startAnimLoop();
+    }).catch(function() {
+      playerState = 'idle';
+      currentTrackId = null;
+      updateAllUI();
+    });
+  }
+  globalAudio.addEventListener('canplay', onCanPlay);
+  globalAudio.load();
+}
+
+function togglePlayPause() {
+  if (playerState === 'playing') { globalAudio.pause(); playerState = 'paused'; updateAllUI(); stopAnimLoop(); }
+  else if (playerState === 'paused') { globalAudio.play(); playerState = 'playing'; updateAllUI(); startAnimLoop(); }
+  else if (playerState === 'idle' && currentTrackId) { playTrack(currentTrackId); }
+}
+
+function skipTrack(direction) {
+  var filtered = getFiltered().filter(function(t) { return !!t.audio; });
+  if (filtered.length === 0) return;
+  var idx = -1;
+  if (currentTrackId) {
+    idx = filtered.findIndex(function(t) { return t.id === currentTrackId; });
+  }
+  var next;
+  if (idx === -1) {
+    next = direction > 0 ? 0 : filtered.length - 1;
+  } else {
+    next = idx + direction;
+    if (next >= filtered.length) next = 0;
+    if (next < 0) next = filtered.length - 1;
+  }
+  playTrack(filtered[next].id);
+
+  // Scroll to card if visible
+  var card = document.getElementById('card-' + safeId(filtered[next].id));
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function shufflePlay() {
+  var filtered = getFiltered().filter(function(t) { return !!t.audio; });
+  if (filtered.length === 0) return;
+  var candidates = filtered.filter(function(t) { return t.id !== currentTrackId; });
+  if (candidates.length === 0) candidates = filtered;
+  var pick = candidates[Math.floor(Math.random() * candidates.length)];
+  playTrack(pick.id);
+  var card = document.getElementById('card-' + safeId(pick.id));
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function stopPlayback() {
+  globalAudio.pause();
+  globalAudio.removeAttribute('src');
+  globalAudio.load();
+  currentTrackId = null;
+  playerState = 'idle';
+  stopAnimLoop();
+  updateAllUI();
+}
+
+// ââ AUDIO EVENTS âââââââââââââââââââââââââââââââââââââââââââââââ
+globalAudio.addEventListener('ended', function() {
+  skipTrack(1); // auto-advance
+});
+
+globalAudio.addEventListener('error', function() {
+  if (playerState === 'loading') {
+    playerState = 'idle';
+    updateAllUI();
+    stopAnimLoop();
+  }
+});
+
+// ââ ANIMATION LOOP âââââââââââââââââââââââââââââââââââââââââââââ
+function startAnimLoop() {
+  if (animFrameId) return;
+  function loop() {
+    updateProgress();
+    animFrameId = requestAnimationFrame(loop);
+  }
+  animFrameId = requestAnimationFrame(loop);
+}
+function stopAnimLoop() {
+  if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+}
+function updateProgress() {
+  var dur = globalAudio.duration || 0;
+  var cur = globalAudio.currentTime || 0;
+  var pct = dur ? (cur / dur * 100) : 0;
+
+  // Mini-player
+  miniFill.style.width = pct + '%';
+  miniTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : (playerState === 'loading' ? 'loading\u2026' : '0:00');
+
+  // Current card
+  if (currentTrackId) {
+    var sid = safeId(currentTrackId);
+    var cardFill = document.getElementById('fill-' + sid);
+    var cardTime = document.getElementById('time-' + sid);
+    if (cardFill) cardFill.style.width = pct + '%';
+    if (cardTime) cardTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : (playerState === 'loading' ? 'loading\u2026' : '0:00');
+  }
+}
+
+// ââ UI UPDATE ââââââââââââââââââââââââââââââââââââââââââââââââââ
+function updateAllUI() {
+  // Mini-player visibility & content
+  if (currentTrackId && playerState !== 'idle') {
+    miniPlayer.classList.add('active');
+    document.body.classList.add('has-mini-player');
+    var track = TRACKS.find(function(t) { return t.id === currentTrackId; });
+    miniTitle.textContent = track ? (track.finalName || track.title) : '';
+    if (playerState === 'loading') {
+      miniPlayBtn.innerHTML = '&#x21BB;';
+      miniPlayBtn.classList.add('spinning');
+    } else if (playerState === 'playing') {
+      miniPlayBtn.innerHTML = '&#9646;&#9646;';
+      miniPlayBtn.classList.remove('spinning');
+    } else if (playerState === 'paused') {
+      miniPlayBtn.innerHTML = '&#9654;';
+      miniPlayBtn.classList.remove('spinning');
+    }
+  } else {
+    miniPlayer.classList.remove('active');
+    document.body.classList.remove('has-mini-player');
+  }
+
+  // Card states
+  document.querySelectorAll('.track-card.playing, .track-card.loading').forEach(function(c) {
+    c.classList.remove('playing', 'loading');
+  });
+  document.querySelectorAll('.play-btn.spinning').forEach(function(b) {
+    b.classList.remove('spinning');
+    b.innerHTML = '&#9654;';
+  });
+  // Reset all play buttons to play icon (for non-current tracks)
+  document.querySelectorAll('.play-btn').forEach(function(b) {
+    if (!currentTrackId || safeId(currentTrackId) !== (b.closest('.track-card') || {}).id?.replace('card-', '')) {
+      b.innerHTML = '&#9654;';
+    }
+  });
+
+  if (currentTrackId) {
+    var sid = safeId(currentTrackId);
+    var card = document.getElementById('card-' + sid);
+    var btn = card ? card.querySelector('.play-btn') : null;
+    if (card && btn) {
+      if (playerState === 'loading') {
+        card.classList.add('loading');
+        btn.innerHTML = '&#x21BB;';
+        btn.classList.add('spinning');
+      } else if (playerState === 'playing') {
+        card.classList.add('playing');
+        btn.innerHTML = '&#9646;&#9646;';
+      } else if (playerState === 'paused') {
+        card.classList.add('playing');
+        btn.innerHTML = '&#9654;';
+      }
+    }
+  }
+
+  updateProgress();
+}
+
+// ââ CARD BUILDER âââââââââââââââââââââââââââââââââââââââââââââââ
+function buildCard(track, idx) {
+  var colour = COLOURS[idx % COLOURS.length];
+  var sid = safeId(track.id);
+  var streamUrl = toStreamUrl(track.audio);
+  var downloadUrl = toDownloadUrl(track.audio);
+  var displayTitle = track.finalName || track.title;
+  var newBadge = isNew(track) ? '<span class="tag badge-new">NEW</span>' : '';
+  var feelTags = (track.feel || []).slice(0, 5).map(function(f) {
+    return '<span class="tag tag-feel" data-feel="' + f.toLowerCase() + '" title="Click to filter by ' + f + '">' + f + '</span>';
+  }).join('');
+  var gearStr = (track.gear || []).join(', ');
+  var favActive = isFav(track.id) ? ' is-fav' : '';
+
+  var audioSection = streamUrl
+    ? '<div class="player"><div class="player-controls">'
+      + '<button class="play-btn" data-track-id="' + track.id + '" aria-label="Play">&#9654;</button>'
+      + '<div class="progress-wrap" id="prog-' + sid + '"><div class="progress-fill" id="fill-' + sid + '"></div></div>'
+      + '<div class="player-time" id="time-' + sid + '">0:00</div>'
+      + '</div>'
+      + '<a class="download-link" href="' + downloadUrl + '" target="_blank">&darr; download</a>'
+      + '</div>'
+    : '<div class="no-audio">no audio yet</div>';
+
+  var actionsRow = '<div class="track-actions">'
+    + '<button class="action-btn copy-link-btn" data-safe-id="' + sid + '" title="Copy link to this track"># link</button>'
+    + '<button class="action-btn copy-credit-btn" data-track-name="' + displayTitle.replace(/"/g, '&quot;') + '" title="Copy credit line to clipboard">&#x2398; credit</button>'
+    + '<button class="action-btn fav-btn' + favActive + '" data-track-id="' + track.id + '" title="' + (isFav(track.id) ? 'Remove from favourites' : 'Add to favourites') + '">' + (isFav(track.id) ? '&#9829;' : '&#9825;') + '</button>'
+    + '</div>';
+
+  return '<div class="track-card" id="card-' + sid + '" style="--track-color:' + colour + '">'
+    + '<div class="track-main">'
+    + '<div class="track-header"><div class="track-title">' + displayTitle + '</div>' + newBadge + '</div>'
+    + '<div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel" data-feel="has-vocals" title="Click to filter by vocals">vocals</span>' : '') + '</div>'
+    + '<div class="track-gear"><strong>gear used:</strong> ' + (gearStr || '&mdash;') + '</div>'
+    + actionsRow
+    + '</div>'
+    + '<div class="track-audio-col">' + audioSection + '</div>'
+    + '</div>';
+}
+
+// ââ RENDER âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function render() {
   var filtered = getFiltered();
   var grid = document.getElementById('tracks-grid');
   var countEl = document.getElementById('visible-count');
   grid.innerHTML = filtered.map(function(t, i) { return buildCard(t, i); }).join('');
   countEl.textContent = filtered.length;
-
-  filtered.forEach(function(track) {
-    if (!track.audio) return;
-    var safeId = track.id.replace(/-/g, '').slice(0, 20);
-    var audio = document.getElementById('audio-' + safeId);
-    var card = document.getElementById('card-' + safeId);
-    var btn = document.getElementById('playbtn-' + safeId);
-    var fill = document.getElementById('fill-' + safeId);
-    var prog = document.getElementById('prog-' + safeId);
-    var timeEl = document.getElementById('time-' + safeId);
-    if (!audio || !btn) return;
-
-    function fmt(s) { return Math.floor(s/60) + ':' + Math.floor(s%60).toString().padStart(2,'0'); }
-
-    var state = 'idle'; // idle | loading | playing
-    function resetUI() {
-      state = 'idle'; btn.classList.remove('spinning'); btn.innerHTML = '&#9654;';
-      card.classList.remove('playing'); card.classList.remove('loading');
-    }
-    btn.addEventListener('click', function() {
-      if (state === 'loading') {
-        audio.pause(); audio.removeAttribute('src'); audio.load(); resetUI(); timeEl.textContent = '0:00';
-        return;
-      }
-      if (state === 'playing') {
-        audio.pause(); state = 'idle'; btn.innerHTML = '&#9654;'; card.classList.remove('playing');
-        return;
-      }
-      if (currentAudio && currentAudio !== audio) { currentAudio.pause(); currentAudio.removeAttribute('src'); currentAudio.load(); }
-      if (currentCard) {
-        currentCard.classList.remove('playing'); currentCard.classList.remove('loading');
-        var ob = currentCard.querySelector('.play-btn'); if (ob) { ob.innerHTML = '&#9654;'; ob.classList.remove('spinning'); }
-        var of = currentCard.querySelector('.progress-fill'); if (of) of.style.width = '0%';
-      }
-      currentAudio = audio; currentCard = card;
-      state = 'loading';
-      card.classList.add('loading');
-      btn.innerHTML = '&#x21BB;'; btn.classList.add('spinning');
-      timeEl.textContent = 'loading\u2026';
-      var streamSrc = btn.dataset.stream;
-      audio.src = streamSrc;
-      function tryPlay() {
-        if (state !== 'loading') return;
-        audio.play().then(function() {
-          state = 'playing'; btn.classList.remove('spinning');
-          card.classList.remove('loading'); card.classList.add('playing');
-          btn.innerHTML = '&#9646;&#9646;';
-        }).catch(function() {
-          resetUI(); timeEl.textContent = '0:00';
-        });
-      }
-      audio.addEventListener('canplay', function handler() { audio.removeEventListener('canplay', handler); tryPlay(); }); audio.load();
-    });
-
-    audio.addEventListener('timeupdate', function() {
-      if (audio.duration) {
-        fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
-        timeEl.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration);
-      }
-    });
-
-    audio.addEventListener('ended', function() {
-      resetUI(); fill.style.width = '0%'; timeEl.textContent = '0:00';
-    });
-
-    prog.addEventListener('click', function(e) {
-      if (!audio.duration) return;
-      var rect = prog.getBoundingClientRect();
-      audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
-    });
-
-  });
+  // Restore playing state on visible cards
+  updateAllUI();
 }
 
+// ââ DEEP LINKS âââââââââââââââââââââââââââââââââââââââââââââââââ
+function handleDeepLink() {
+  var hash = window.location.hash;
+  if (!hash || !hash.startsWith('#t-')) return;
+  var sid = hash.slice(3);
+  // Switch to "all" filter so the linked track is visible
+  currentFilter = 'all';
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  var allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+  if (allBtn) allBtn.classList.add('active');
+  render();
+  var card = document.getElementById('card-' + sid);
+  if (card) {
+    setTimeout(function() {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('highlighted');
+      setTimeout(function() { card.classList.remove('highlighted'); }, 3000);
+    }, 200);
+  }
+}
+
+// ââ LOAD TRACKS ââââââââââââââââââââââââââââââââââââââââââââââââ
 function showState(icon, message, isError) {
   document.getElementById('tracks-grid').innerHTML = '<div class="state-message' + (isError ? ' error' : '') + '"><span class="icon' + (icon === 'spinning' ? ' spinning' : '') + '">' + icon + '</span>' + message + '</div>';
   document.getElementById('visible-count').textContent = '\u2014';
@@ -366,7 +641,6 @@ function showState(icon, message, isError) {
 
 function loadTracks() {
   showState('spinning', 'Loading music database...');
-  document.getElementById('tracks-grid').innerHTML = '<div class="state-message"><span class="icon spinning">&#x21BB;</span>Loading music database...</div>';
   fetch(API_URL)
     .then(function(res) {
       if (!res.ok) throw new Error('Server error: ' + res.status);
@@ -375,7 +649,12 @@ function loadTracks() {
     .then(function(data) {
       if (data.error) throw new Error(data.error);
       TRACKS = data.tracks;
-      render();
+      // Check for deep link
+      if (window.location.hash && window.location.hash.startsWith('#t-')) {
+        handleDeepLink();
+      } else {
+        render();
+      }
     })
     .catch(function(err) {
       console.error(err);
@@ -384,10 +663,13 @@ function loadTracks() {
     });
 }
 
+// ââ SEARCH âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 document.getElementById('search').addEventListener('input', function(e) {
-  currentSearch = e.target.value; render();
+  currentSearch = e.target.value;
+  render();
 });
 
+// ââ FILTER BUTTONS âââââââââââââââââââââââââââââââââââââââââââââ
 document.querySelectorAll('.filter-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -397,8 +679,68 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
   });
 });
 
-// Ã¢ÂÂÃ¢ÂÂ Event delegation on tracks grid Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// ââ SORT DROPDOWN ââââââââââââââââââââââââââââââââââââââââââââââ
+document.getElementById('sort-select').addEventListener('change', function(e) {
+  currentSort = e.target.value;
+  render();
+});
+
+// ââ SHUFFLE BUTTON âââââââââââââââââââââââââââââââââââââââââââââ
+document.getElementById('shuffle-btn').addEventListener('click', function() {
+  shufflePlay();
+});
+
+// ââ MINI-PLAYER CONTROLS âââââââââââââââââââââââââââââââââââââââ
+document.getElementById('mini-play').addEventListener('click', function() {
+  if (playerState === 'loading') {
+    stopPlayback();
+  } else {
+    togglePlayPause();
+  }
+});
+document.getElementById('mini-prev').addEventListener('click', function() { skipTrack(-1); });
+document.getElementById('mini-next').addEventListener('click', function() { skipTrack(1); });
+document.getElementById('mini-close').addEventListener('click', function() { stopPlayback(); });
+miniProg.addEventListener('click', function(e) {
+  if (!globalAudio.duration) return;
+  var rect = miniProg.getBoundingClientRect();
+  globalAudio.currentTime = ((e.clientX - rect.left) / rect.width) * globalAudio.duration;
+});
+
+// ââ KEYBOARD SHORTCUTS âââââââââââââââââââââââââââââââââââââââââ
+document.addEventListener('keydown', function(e) {
+  // Ignore if typing in an input
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (playerState === 'loading') {
+      stopPlayback();
+    } else {
+      togglePlayPause();
+    }
+  }
+});
+
+// ââ EVENT DELEGATION ON TRACKS GRID ââââââââââââââââââââââââââââ
 document.getElementById('tracks-grid').addEventListener('click', function(e) {
+  // Play button
+  var playBtn = e.target.closest('.play-btn[data-track-id]');
+  if (playBtn) {
+    playTrack(playBtn.dataset.trackId);
+    return;
+  }
+
+  // Progress bar seek
+  var progWrap = e.target.closest('.progress-wrap');
+  if (progWrap && currentTrackId) {
+    var sid = safeId(currentTrackId);
+    if (progWrap.id === 'prog-' + sid && globalAudio.duration) {
+      var rect = progWrap.getBoundingClientRect();
+      globalAudio.currentTime = ((e.clientX - rect.left) / rect.width) * globalAudio.duration;
+    }
+    return;
+  }
+
   // Clickable tag filtering
   var tag = e.target.closest('.tag-feel[data-feel]');
   if (tag) {
@@ -409,6 +751,19 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
     currentFilter = feel;
     render();
     document.querySelector('.controls').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+
+  // Copy link button
+  var linkBtn = e.target.closest('.copy-link-btn');
+  if (linkBtn) {
+    var sid = linkBtn.dataset.safeId;
+    var url = window.location.origin + window.location.pathname + '#t-' + sid;
+    navigator.clipboard.writeText(url).then(function() {
+      linkBtn.classList.add('copied');
+      linkBtn.textContent = '\u2713 copied';
+      setTimeout(function() { linkBtn.classList.remove('copied'); linkBtn.textContent = '# link'; }, 2000);
+    });
     return;
   }
 
@@ -433,13 +788,17 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
     favBtn.classList.toggle('is-fav', nowFav);
     favBtn.innerHTML = nowFav ? '&#9829;' : '&#9825;';
     favBtn.title = nowFav ? 'Remove from favourites' : 'Add to favourites';
-    // If viewing favourites filter and we just unfavourited, re-render
     if (currentFilter === 'favourites' && !nowFav) render();
     return;
   }
 });
-// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
+// ââ HASH CHANGE ââââââââââââââââââââââââââââââââââââââââââââââââ
+window.addEventListener('hashchange', function() {
+  if (TRACKS.length > 0) handleDeepLink();
+});
+
+// ââ INIT âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 loadTracks();
 </script>
 </body>
