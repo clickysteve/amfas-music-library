@@ -132,8 +132,8 @@
     <input type="text" id="search" placeholder="Search tracks, gear, feel..." autocomplete="off">
   </div>
   <div class="filter-group">
-    <button class="filter-btn active" data-filter="all">All</button>
-    <button class="filter-btn" data-filter="has-audio">Has Audio</button>
+    <button class="filter-btn" data-filter="all">All</button>
+    <button class="filter-btn active" data-filter="has-audio">Has Audio</button>
     <button class="filter-btn" data-filter="has-vocals">Has Vocals</button>
     <button class="filter-btn" data-filter="electronic">Electronic</button>
     <button class="filter-btn" data-filter="ambient">Ambient</button>
@@ -169,7 +169,7 @@
 <script>
 const COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
 let TRACKS = [];
-let currentFilter = 'all';
+let currentFilter = 'has-audio';
 let currentSearch = '';
 let currentAudio = null;
 let currentCard = null;
@@ -189,7 +189,7 @@ function buildCard(track, idx) {
   const audioSection = audioUrl
     ? '<div class="player"><audio id="audio-' + safeId + '" preload="none" src="' + audioUrl + '" crossorigin="anonymous"></audio><div class="player-controls"><button class="play-btn" id="playbtn-' + safeId + '" aria-label="Play">&#9654;</button><div class="progress-wrap" id="prog-' + safeId + '"><div class="progress-fill" id="fill-' + safeId + '"></div></div><div class="player-time" id="time-' + safeId + '">0:00</div></div><a class="download-link" href="' + track.audio + '" target="_blank">&darr; download</a></div>'
     : '<div class="no-audio">no audio yet</div>';
-  return '<div class="track-card" id="card-' + safeId + '" style="--track-color:' + colour + '"><div class="track-main"><div class="track-header"><div class="track-title">' + displayTitle + '</div></div><div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel">vocals</span>' : '') + '</div><div class="track-gear"><strong>gear:</strong> ' + (gearStr || '&mdash;') + '</div></div><div class="track-audio-col">' + audioSection + '</div></div>';
+  return '<div class="track-card" id="card-' + safeId + '" style="--track-color:' + colour + '"><div class="track-main"><div class="track-header"><div class="track-title">' + displayTitle + '</div></div><div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel">vocals</span>' : '') + '</div><div class="track-gear"><strong>gear used:</strong> ' + (gearStr || '&mdash;') + '</div></div><div class="track-audio-col">' + audioSection + '</div></div>';
 }
 
 function getFiltered() {
