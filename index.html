@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The AMFAS Music Library &mdash; allmyfriendsaresynths</title>
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="The AMFAS Music Library">
+<meta property="og:description" content="Free creative-commons music for independent artists, film-makers, and vloggers. Browse, preview, and download tracks by allmyfriendsaresynths.">
+<meta property="og:url" content="https://clickysteve.github.io/amfas-music-library/">
+<meta property="og:image" content="https://torch-jumbo-a57.notion.site/image/attachment%3Abcca6a02-6ef4-4456-9676-0a4dc0cdfafb%3Aamfaslogo2_copy.png?id=1aa9e578-d459-80da-9b93-e7f346f89c07&table=block&spaceId=b2cdeeaf-ac10-4648-b22a-71fb48a05239&width=512&userId=&cache=v2">
+<meta property="og:site_name" content="allmyfriendsaresynths">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The AMFAS Music Library">
+<meta name="twitter:description" content="Free creative-commons music for independent artists, film-makers, and vloggers.">
+<meta name="twitter:image" content="https://torch-jumbo-a57.notion.site/image/attachment%3Abcca6a02-6ef4-4456-9676-0a4dc0cdfafb%3Aamfaslogo2_copy.png?id=1aa9e578-d459-80da-9b93-e7f346f89c07&table=block&spaceId=b2cdeeaf-ac10-4648-b22a-71fb48a05239&width=512&userId=&cache=v2">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
@@ -43,6 +58,10 @@
   .filter-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.35rem 0.75rem; cursor: pointer; transition: all 0.15s; }
   .filter-btn:hover { border-color: var(--text); color: var(--text); }
   .filter-btn.active { background: var(--acid); border-color: var(--acid); color: #000; font-weight: 700; }
+  .filter-btn[data-filter="favourites"] { border-color: rgba(255,34,85,0.4); color: #ff2255; }
+  .filter-btn[data-filter="favourites"].active { background: #ff2255; border-color: #ff2255; color: #fff; }
+  .filter-btn[data-filter="new"] { border-color: rgba(0,229,255,0.4); color: var(--cyan); }
+  .filter-btn[data-filter="new"].active { background: var(--cyan); border-color: var(--cyan); color: #000; }
   .count-display { color: var(--muted); font-size: 11px; letter-spacing: 0.05em; margin-left: auto; white-space: nowrap; }
   .count-display strong { color: var(--acid); }
   .loading-note { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; opacity: 0.7; white-space: nowrap; }
@@ -61,8 +80,16 @@
   .tag { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.2em 0.55em; border: 1px solid; font-weight: 700; }
   .tag-feel { border-color: rgba(255,170,0,0.4); color: var(--acid); background: rgba(255,170,0,0.07); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
   .tag-feel:hover { background: rgba(255,170,0,0.2); border-color: var(--acid); }
+  .badge-new { border-color: rgba(0,229,255,0.5); color: var(--cyan); background: rgba(0,229,255,0.1); font-size: 9px; letter-spacing: 0.12em; }
   .track-gear { font-size: 13px; color: var(--muted); line-height: 1.5; white-space: normal; word-break: break-word; }
   .track-gear strong { color: #887755; }
+  .track-actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem; }
+  .action-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-family: var(--mono); font-size: 11px; padding: 0.2em 0.6em; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.3em; letter-spacing: 0.05em; }
+  .action-btn:hover { border-color: var(--text); color: var(--text); }
+  .action-btn.copied { border-color: var(--cyan); color: var(--cyan); }
+  .fav-btn { font-size: 13px; padding: 0.15em 0.5em; }
+  .fav-btn.is-fav { border-color: #ff2255; color: #ff2255; background: rgba(255,34,85,0.1); }
+  .fav-btn:hover { border-color: #ff2255; color: #ff2255; }
   .track-audio-col { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.25rem; border-left: 1px solid var(--border); background: rgba(0,0,0,0.15); transition: border-color 0.2s; }
   .track-card:hover .track-audio-col, .track-card.playing .track-audio-col { border-left-color: var(--track-color, var(--acid)); }
   .no-audio { color: var(--border); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
@@ -140,6 +167,8 @@
     <button class="filter-btn" data-filter="ambient">Ambient</button>
     <button class="filter-btn" data-filter="dark">Dark</button>
     <button class="filter-btn" data-filter="glitchy">Glitchy</button>
+    <button class="filter-btn" data-filter="new">New</button>
+    <button class="filter-btn" data-filter="favourites">&#9829; Favs</button>
   </div>
   <div class="count-display"><strong id="visible-count">&mdash;</strong> tracks</div>
   <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load</div>
@@ -168,16 +197,40 @@
 </footer>
 
 <script>
-// Ã¢ÂÂÃ¢ÂÂ CHANGE THIS to your Cloudflare Worker URL after deploying Ã¢ÂÂÃ¢ÂÂ
+// ── CHANGE THIS to your Cloudflare Worker URL after deploying ──
 const API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
-// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// ────────────────────────────────────────────────────────────────
 
 const COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
+const NEW_DAYS = 30; // tracks added in last N days get a "NEW" badge
 let TRACKS = [];
 let currentFilter = 'has-audio';
 let currentSearch = '';
 let currentAudio = null;
 let currentCard = null;
+
+// ── Favourites (localStorage) ──────────────────────────────────
+function getFavs() {
+  try { return JSON.parse(localStorage.getItem('amfas-favs') || '[]'); } catch(e) { return []; }
+}
+function setFavs(arr) {
+  try { localStorage.setItem('amfas-favs', JSON.stringify(arr)); } catch(e) {}
+}
+function isFav(id) { return getFavs().indexOf(id) !== -1; }
+function toggleFav(id) {
+  var favs = getFavs();
+  var idx = favs.indexOf(id);
+  if (idx === -1) { favs.push(id); } else { favs.splice(idx, 1); }
+  setFavs(favs);
+  return idx === -1; // returns true if now a fav
+}
+// ────────────────────────────────────────────────────────────────
+
+function isNew(track) {
+  if (!track.createdAt) return false;
+  var diff = Date.now() - new Date(track.createdAt).getTime();
+  return diff < NEW_DAYS * 24 * 60 * 60 * 1000;
+}
 
 function toStreamUrl(url) {
   if (!url) return null;
@@ -189,26 +242,38 @@ function toDownloadUrl(url) {
 }
 
 function buildCard(track, idx) {
-  const colour = COLOURS[idx % COLOURS.length];
-  const safeId = track.id.replace(/-/g, '').slice(0, 20);
-  const streamUrl = toStreamUrl(track.audio);
-  const downloadUrl = toDownloadUrl(track.audio);
-  const displayTitle = track.finalName || track.title;
-  const feelTags = (track.feel || []).slice(0, 5).map(f => '<span class="tag tag-feel" data-feel="' + f.toLowerCase() + '" title="Click to filter by ' + f + '">' + f + '</span>').join('');
-  const gearStr = (track.gear || []).join(', ');
-  const audioSection = streamUrl
+  var colour = COLOURS[idx % COLOURS.length];
+  var safeId = track.id.replace(/-/g, '').slice(0, 20);
+  var streamUrl = toStreamUrl(track.audio);
+  var downloadUrl = toDownloadUrl(track.audio);
+  var displayTitle = track.finalName || track.title;
+  var newBadge = isNew(track) ? '<span class="tag badge-new">NEW</span>' : '';
+  var feelTags = (track.feel || []).slice(0, 5).map(function(f) { return '<span class="tag tag-feel" data-feel="' + f.toLowerCase() + '" title="Click to filter by ' + f + '">' + f + '</span>'; }).join('');
+  var gearStr = (track.gear || []).join(', ');
+  var favActive = isFav(track.id) ? ' is-fav' : '';
+
+  var audioSection = streamUrl
     ? '<div class="player"><audio id="audio-' + safeId + '" preload="none"></audio><div class="player-controls"><button class="play-btn" id="playbtn-' + safeId + '" aria-label="Play" data-stream="' + streamUrl + '">&#9654;</button><div class="progress-wrap" id="prog-' + safeId + '"><div class="progress-fill" id="fill-' + safeId + '"></div></div><div class="player-time" id="time-' + safeId + '">0:00</div></div><a class="download-link" href="' + downloadUrl + '" target="_blank">&darr; download</a></div>'
     : '<div class="no-audio">no audio yet</div>';
-  return '<div class="track-card" id="card-' + safeId + '" style="--track-color:' + colour + '"><div class="track-main"><div class="track-header"><div class="track-title">' + displayTitle + '</div></div><div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel" data-feel="has-vocals" title="Click to filter by vocals">vocals</span>' : '') + '</div><div class="track-gear"><strong>gear used:</strong> ' + (gearStr || '&mdash;') + '</div></div><div class="track-audio-col">' + audioSection + '</div></div>';
+
+  var actionsRow = '<div class="track-actions">'
+    + '<button class="action-btn copy-credit-btn" data-track-name="' + displayTitle.replace(/"/g, '&quot;') + '" title="Copy credit line to clipboard">&#x2398; credit</button>'
+    + '<button class="action-btn fav-btn' + favActive + '" data-track-id="' + track.id + '" title="' + (isFav(track.id) ? 'Remove from favourites' : 'Add to favourites') + '">' + (isFav(track.id) ? '&#9829;' : '&#9825;') + '</button>'
+    + '</div>';
+
+  return '<div class="track-card" id="card-' + safeId + '" style="--track-color:' + colour + '"><div class="track-main"><div class="track-header"><div class="track-title">' + displayTitle + '</div>' + newBadge + '</div><div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel" data-feel="has-vocals" title="Click to filter by vocals">vocals</span>' : '') + '</div><div class="track-gear"><strong>gear used:</strong> ' + (gearStr || '&mdash;') + '</div>' + actionsRow + '</div><div class="track-audio-col">' + audioSection + '</div></div>';
 }
 
 function getFiltered() {
+  var favs = getFavs();
   return TRACKS.filter(function(t) {
     var q = currentSearch.toLowerCase();
     var searchMatch = !q || [t.title, t.finalName].concat(t.feel || []).concat(t.gear || []).filter(Boolean).some(function(s) { return s.toLowerCase().includes(q); });
     var filterMatch = true;
     if (currentFilter === 'has-audio') filterMatch = !!t.audio;
     else if (currentFilter === 'has-vocals') filterMatch = t.hasVocals;
+    else if (currentFilter === 'favourites') filterMatch = favs.indexOf(t.id) !== -1;
+    else if (currentFilter === 'new') filterMatch = isNew(t);
     else if (currentFilter !== 'all') filterMatch = (t.feel || []).some(function(f) { return f.toLowerCase() === currentFilter; });
     return searchMatch && filterMatch;
   });
@@ -241,16 +306,13 @@ function render() {
     }
     btn.addEventListener('click', function() {
       if (state === 'loading') {
-        // Cancel loading
         audio.pause(); audio.removeAttribute('src'); audio.load(); resetUI(); timeEl.textContent = '0:00';
         return;
       }
       if (state === 'playing') {
-        // Pause
         audio.pause(); state = 'idle'; btn.innerHTML = '&#9654;'; card.classList.remove('playing');
         return;
       }
-      // State is idle &mdash; start playing
       if (currentAudio && currentAudio !== audio) { currentAudio.pause(); currentAudio.removeAttribute('src'); currentAudio.load(); }
       if (currentCard) {
         currentCard.classList.remove('playing'); currentCard.classList.remove('loading');
@@ -262,7 +324,6 @@ function render() {
       card.classList.add('loading');
       btn.innerHTML = '&#x21BB;'; btn.classList.add('spinning');
       timeEl.textContent = 'loading\u2026';
-      // Set src fresh each time to avoid stale Dropbox sessions
       var streamSrc = btn.dataset.stream;
       audio.src = streamSrc;
       function tryPlay() {
@@ -336,24 +397,48 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
   });
 });
 
-
-// Clickable tag filtering â clicking a tag on a card filters to that feel
+// ── Event delegation on tracks grid ────────────────────────────
 document.getElementById('tracks-grid').addEventListener('click', function(e) {
+  // Clickable tag filtering
   var tag = e.target.closest('.tag-feel[data-feel]');
-  if (!tag) return;
-  var feel = tag.dataset.feel;
-  var matchBtn = document.querySelector('.filter-btn[data-filter="' + feel + '"]');
-  if (matchBtn) {
+  if (tag) {
+    var feel = tag.dataset.feel;
+    var matchBtn = document.querySelector('.filter-btn[data-filter="' + feel + '"]');
     document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-    matchBtn.classList.add('active');
+    if (matchBtn) matchBtn.classList.add('active');
     currentFilter = feel;
-  } else {
-    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-    currentFilter = feel;
+    render();
+    document.querySelector('.controls').scrollIntoView({ behavior: 'smooth' });
+    return;
   }
-  render();
-  document.querySelector('.controls').scrollIntoView({ behavior: 'smooth' });
+
+  // Copy credit button
+  var copyBtn = e.target.closest('.copy-credit-btn');
+  if (copyBtn) {
+    var name = copyBtn.dataset.trackName;
+    var credit = 'Music: "' + name + '" by Stephen McLeod (allmyfriendsaresynths) \u2014 musiclibrary.allmyfriendsaresynths.com \u2014 CC BY-NC-SA 4.0';
+    navigator.clipboard.writeText(credit).then(function() {
+      copyBtn.classList.add('copied');
+      copyBtn.innerHTML = '&#x2713; copied';
+      setTimeout(function() { copyBtn.classList.remove('copied'); copyBtn.innerHTML = '&#x2398; credit'; }, 2000);
+    });
+    return;
+  }
+
+  // Favourite button
+  var favBtn = e.target.closest('.fav-btn');
+  if (favBtn) {
+    var id = favBtn.dataset.trackId;
+    var nowFav = toggleFav(id);
+    favBtn.classList.toggle('is-fav', nowFav);
+    favBtn.innerHTML = nowFav ? '&#9829;' : '&#9825;';
+    favBtn.title = nowFav ? 'Remove from favourites' : 'Add to favourites';
+    // If viewing favourites filter and we just unfavourited, re-render
+    if (currentFilter === 'favourites' && !nowFav) render();
+    return;
+  }
 });
+// ────────────────────────────────────────────────────────────────
 
 loadTracks();
 </script>
