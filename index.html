@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The AMFAS Music Library — allmyfriendsaresynths</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0a07;
+    --surface: #131108;
+    --card: #1a1608;
+    --border: #322d18;
+    --text: #f0ede4;
+    --muted: #8a8470;
+    --acid: #ffaa00;
+    --hot: #ff4400;
+    --cyan: #00e5ff;
+    --orange: #ff6b00;
+    --purple: #b400ff;
+    --pink: #ff69e0;
+    --mono: 'Space Mono', monospace;
+    --display: 'Unbounded', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 16px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.5;
+  }
+
+  /* HEADER */
+  header {
+    padding: 2.5rem 2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(255,170,0,0.14) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -100px; right: -50px;
+    width: 500px; height: 300px;
+    background: radial-gradient(circle, rgba(255,68,0,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .header-top {
+    margin-bottom: 2rem;
+  }
+
+  .header-identity {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .logo-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--acid);
+    flex-shrink: 0;
+    filter: saturate(1.2);
+  }
+
+  .header-body {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .header-desc {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .header-desc p {
+    margin-bottom: 0.9rem;
+  }
+
+  .header-desc a {
+    color: var(--acid);
+    text-decoration: none;
+  }
+  .header-desc a:hover { text-decoration: underline; }
+
+  .header-video {
+    flex-shrink: 0;
+  }
+
+  .video-wrap {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .video-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .site-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--acid);
+    margin-bottom: 0.6rem;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(1.8rem, 5vw, 4rem);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 0;
+  }
+
+  h1 span {
+    display: block;
+    background: linear-gradient(135deg, var(--acid), var(--hot));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .license-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    background: rgba(255,170,0,0.1);
+    border: 1px solid rgba(255,170,0,0.3);
+    color: var(--acid);
+    padding: 0.3em 0.8em;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.75rem;
+  }
+
+  /* CONTROLS */
+  .controls {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .search-wrap {
+    flex: 1;
+    min-width: 220px;
+    position: relative;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 0.6rem 1rem 0.6rem 2.4rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--acid); }
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .filter-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--text); color: var(--text); }
+  .filter-btn.active {
+    background: var(--acid);
+    border-color: var(--acid);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .count-display {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .count-display strong { color: var(--acid); }
+
+  .loading-note {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    opacity: 0.7;
+    white-space: nowrap;
+  }
+
+  /* TRACK LIST */
+  main {
+    padding: 1.5rem 2rem;
+  }
+
+  .tracks-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .track-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    transition: border-color 0.2s, background 0.2s;
+    animation: fadeIn 0.3s ease both;
+    position: relative;
+    overflow: hidden;
+    align-items: stretch;
+  }
+
+  .track-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--track-color, var(--acid));
+    opacity: 0.7;
+  }
+
+  .track-card:hover {
+    border-color: var(--track-color, var(--acid));
+    background: #211a08;
+  }
+
+  .track-card.playing {
+    border-color: var(--track-color, var(--acid));
+    background: #211a08;
+  }
+  .track-card.playing::before { opacity: 1; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .track-main {
+    min-width: 0;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .track-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.8rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .track-title {
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .track-subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    font-style: italic;
+    flex-shrink: 0;
+  }
+
+  .track-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .tag {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2em 0.55em;
+    border: 1px solid;
+    font-weight: 700;
+  }
+
+  .tag-feel { border-color: rgba(255,170,0,0.4); color: var(--acid); background: rgba(255,170,0,0.07); }
+  .tag-status-finished { border-color: rgba(255,170,0,0.4); color: var(--acid); background: rgba(255,170,0,0.07); }
+  .tag-status-progress { border-color: rgba(255,107,0,0.4); color: var(--orange); background: rgba(255,107,0,0.06); }
+  .tag-release { border-color: rgba(180,0,255,0.4); color: var(--purple); background: rgba(180,0,255,0.06); }
+
+  .track-gear {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .track-gear strong { color: #887755; }
+
+  /* CUSTOM AUDIO PLAYER */
+  .player {
+    width: 100%;
+  }
+
+  .player-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .play-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--track-color, var(--acid));
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.15s, opacity 0.15s;
+    color: #000;
+    font-size: 14px;
+  }
+  .play-btn:hover { opacity: 0.85; transform: scale(1.08); }
+  .play-btn:active { transform: scale(0.95); }
+
+  .player-time {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    min-width: 70px;
+    text-align: right;
+  }
+
+  .progress-wrap {
+    flex: 1;
+    height: 5px;
+    background: var(--border);
+    cursor: pointer;
+    position: relative;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--track-color, var(--acid));
+    border-radius: 2px;
+    transition: width 0.1s linear;
+    pointer-events: none;
+  }
+
+  .download-link {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s;
+    display: inline-block;
+  }
+  .download-link:hover { color: var(--acid); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+  .empty-state .big { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-state p { font-size: 12px; }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    margin-top: 3rem;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.8;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 3rem;
+    justify-content: space-between;
+  }
+  footer a { color: var(--cyan); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* AUDIO COLUMN */
+  .track-audio-col {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-left: 1px solid var(--border);
+    background: rgba(0,0,0,0.15);
+    transition: border-color 0.2s;
+  }
+
+  .track-card:hover .track-audio-col,
+  .track-card.playing .track-audio-col {
+    border-left-color: var(--track-color, var(--acid));
+  }
+
+  .no-audio {
+    color: var(--border);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .playing-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--acid);
+    margin-right: 0.4rem;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  @media (max-width: 700px) {
+    header { padding: 1.5rem 1rem; }
+    .header-body { grid-template-columns: 1fr; }
+    .header-video { order: -1; }
+    .logo-circle { width: 64px; height: 64px; }
+    .controls { padding: 1rem; flex-wrap: wrap; }
+    .loading-note { display: none; }
+    main { padding: 1rem; }
+    .track-card { grid-template-columns: 1fr; }
+    .track-audio-col {
+      border-left: none;
+      border-top: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+    }
+    .track-card:hover .track-audio-col,
+    .track-card.playing .track-audio-col {
+      border-top-color: var(--track-color, var(--acid));
+      border-left-color: transparent;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="header-identity">
+      <img class="logo-circle" src="https://torch-jumbo-a57.notion.site/image/attachment%3Abcca6a02-6ef4-4456-9676-0a4dc0cdfafb%3Aamfaslogo2_copy.png?id=1aa9e578-d459-80da-9b93-e7f346f89c07&table=block&spaceId=b2cdeeaf-ac10-4648-b22a-71fb48a05239&width=250&userId=&cache=v2" alt="allmyfriendsaresynths logo">
+      <div>
+        <div class="site-label">allmyfriendsaresynths // music library</div>
+        <h1>The AMFAS<br><span>Music Library</span></h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="header-body">
+    <div class="header-desc">
+      <p>Below is a database of music that I (aka <strong>Stephen McLeod</strong> aka <em>allmyfriendsaresynths</em>) have created over the last few years. This resource is shared publicly for independent artists, film-makers, vloggers, and other creative folks to use in their projects.</p>
+      <p>These tracks are completely free to use for non-commercial work — provided that you include a credit to <strong>'Stephen McLeod aka allmyfriendsaresynths'</strong> and link back to <a href="https://musiclibrary.allmyfriendsaresynths.com">musiclibrary.allmyfriendsaresynths.com</a>. Usage for political works is not permitted without prior permission. Outside of that exception, this material is governed by and released under a <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">Creative Commons CC BY-NC-SA 4.0</a> license.</p>
+      <p>'Non-commercial' use will generally include incidental revenue — meaning that you are fine to use these tracks on your monetised YouTube videos, so long as the primary purpose isn't commercial. In other words: including the music as the background for your vlog? <strong>Fine.</strong> Uploading a video with the music purely to generate AdSense cash? <strong>Not fine.</strong></p>
+      <p>Please note that these tracks may use uncleared samples, and so are offered without any guarantee or warranty whatsoever and with absolutely no acceptance of liability. For anything. At all. <em>Caveat Emptor.</em> All other rights reserved. If you'd like to share what you've done, feel free to <a href="/cdn-cgi/l/email-protection#afcec3c3c2d6c9cedcefc8c2cec6c381ccc0c2">drop me a note</a> — I'd love to hear, though it isn't required.</p>
+      <div class="license-badge">⚖ CC BY-NC-SA 4.0 — Free for non-commercial use</div>
+    </div>
+
+    <div class="header-video">
+      <div class="video-wrap">
+        <iframe src="https://www.youtube.com/embed/QPvn3aL2x0o" title="allmyfriendsaresynths" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Search tracks, gear, feel..." autocomplete="off">
+  </div>
+  <div class="filter-group" id="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="finished">Finished</button>
+    <button class="filter-btn" data-filter="has-audio">Has Audio</button>
+    <button class="filter-btn" data-filter="released">Released</button>
+    <button class="filter-btn" data-filter="has-vocals">Has Vocals</button>
+    <button class="filter-btn" data-filter="electronic">Electronic</button>
+    <button class="filter-btn" data-filter="ambient">Ambient</button>
+    <button class="filter-btn" data-filter="dark">Dark</button>
+    <button class="filter-btn" data-filter="glitchy">Glitchy</button>
+  </div>
+  <div class="count-display"><strong id="visible-count">0</strong> tracks</div>
+  <div class="loading-note">⏳ audio previews are high quality WAV — may take a moment to load</div>
+</div>
+
+<main>
+  <div class="tracks-grid" id="tracks-grid"></div>
+  <div class="empty-state" id="empty-state" style="display:none">
+    <div class="big">🔇</div>
+    <p>No tracks match your search. Try something else.</p>
+  </div>
+</main>
+
+<footer>
+  <div>
+    <strong>Contact</strong><br>
+    <a href="/cdn-cgi/l/email-protection#2c4d404041554a4d5f6c4b414d4540024f4341"><span class="__cf_email__" data-cfemail="bfded3d3d2c6d9deccffd8d2ded6d391dcd0d2">[email&#160;protected]</span></a><br>
+    For stems, release forms, re-masters, commissions — get in touch.
+  </div>
+  <div>
+    <strong>Source</strong><br>
+    Data from <a href="https://torch-jumbo-a57.notion.site/The-AMFAS-Music-Library-1aa9e578d45980da9b93e7f346f89c07" target="_blank">Notion database</a><br>
+    Updated periodically. Everything subject to change.
+  </div>
+  <div>
+    <strong>License</strong><br>
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">Creative Commons CC BY-NC-SA 4.0</a><br>
+    Non-commercial use with credit. No political use without permission.
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ─── DROPBOX URL CONVERTER ────────────────────────────────────────────────────
+// Converts www.dropbox.com share links to dl.dropboxusercontent.com direct URLs
+// which support cross-origin audio embedding
+function toDirectUrl(url) {
+  if (!url) return null;
+  return url
+    .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+    .replace(/[&?]dl=\d/, '');
+}
+
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Netlify function endpoint — works automatically once deployed to Netlify
+const WORKER_URL = '/.netlify/functions/tracks';
+
+// ─── TRACK DATA ───────────────────────────────────────────────────────────────
+let TRACKS = [
+  {
+    id: 1,
+    title: "artemz",
+    subtitle: "120",
+    finalName: "Artemis",
+    feel: ["weird"],
+    gear: ["Dirtywave M8", "Sampled Drums"],
+    status: "Finished",
+    artist: "Artemis",
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/u4xttt7kmjqocvjadp65u/artemz.wav?rlkey=vqqcg3skq4c3rwxl5y632joqa&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 2,
+    title: "some kind of thing",
+    subtitle: null,
+    feel: ["acid", "driving", "uptempo", "electronic"],
+    gear: ["Arturia V Collection", "soundtoys", "Erica Synths HexDrum", "Eurorack", "ALM MFX", "data bender"],
+    status: null,
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/6iit5whb7hpgf8s66hywq/somekindofthing.wav?rlkey=avbuwq8wxee6k31us7gbgu3gu&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 3,
+    title: "too much synth",
+    subtitle: null,
+    feel: ["acid", "driving", "uptempo", "electronic"],
+    gear: ["Dirtywave M8", "Acid Generator", "TD3", "drum samples", "vocal samples"],
+    status: "Finished",
+    artist: null,
+    release: "HEX-EREBUS",
+    audio: "https://www.dropbox.com/scl/fi/bpl21ac4csyee3g7g3nf5/too-much-synth.wav?rlkey=tfr0klnuqj5w9lx8vg1vub83e&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 4,
+    title: "HEX-EREBUS",
+    subtitle: "instrumental electronic dark",
+    feel: ["electronic", "dark", "instrumental"],
+    gear: ["Erica Synths HexDrum", "dreadbox Erebus reissue", "Hermod+", "2hp Blur"],
+    status: "Finished",
+    artist: null,
+    release: "HEX-EREBUS",
+    audio: "https://www.dropbox.com/scl/fi/hn1axsud8cs0exfnmjf6n/HEX-EREBUS.wav?rlkey=kzkfxvtnpnw7pmn3ypemwrsfb&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 5,
+    title: "OB6HEX2HP",
+    subtitle: null,
+    feel: ["ambient", "chilled", "instrumental", "dreamy", "downtempo"],
+    gear: ["Erica Synths HexDrum", "Hermod+", "2hp Blur", "modular", "Eurorack", "Feedback Modules", "OB-6"],
+    status: "Finished",
+    artist: null,
+    release: "HEX-EREBUS",
+    audio: "https://www.dropbox.com/scl/fi/jzwfs60udpqvm2re9pk8p/OB6HEX2HP.wav?rlkey=kvtymrshvvaxda8x0by6ovyqt&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 6,
+    title: "BRKBZ8",
+    subtitle: null,
+    feel: ["instrumental", "thoughtful", "electronic", "textural"],
+    gear: ["Dirtywave M8", "Sampled Drums", "samples"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/ag1gg2gswolth7u5www4j/BRKBZ8.wav?rlkey=hacw368ovn772fj55s7q383vz&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 7,
+    title: "awake-floor-86bpm",
+    subtitle: "Noodlebox",
+    finalName: "Noodlebox",
+    feel: [],
+    gear: ["Cizzle", "ALM CZ", "polyend play", "Sampled Drums", "Intellijel Rainmaker", "ALM MFX", "bitcrusher", "m8 filter"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: null,
+    hasVocals: false,
+  },
+  {
+    id: 8,
+    title: "minor-substance-120bpm-per4mer",
+    subtitle: null,
+    feel: ["sweet", "dreamy", "electronic", "instrumental", "bright", "thoughtful", "uplifting"],
+    gear: ["m8 filter", "ALM MFX", "perfourmer", "jellyfish delay", "polyend play", "Oxi One", "Sampled Drums"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/6vxst2cum4orlfrzcjtgl/minor-substance-120bpm-per4mer.wav?rlkey=6eppy7jep2mb8lfqr9yzu4j0a&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 9,
+    title: "bastlalch",
+    subtitle: null,
+    feel: [],
+    gear: ["Eurorack", "Sampled Drums", "nerdseq", "bastl alchemist"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/3c4k2f42qreuytkdtebar/bastlalch.wav?rlkey=kc3r4fgwq2azrme89re1es2m6&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 10,
+    title: "per4meroxijanjam",
+    subtitle: null,
+    feel: ["chilled", "dreamy", "mysterious", "layered"],
+    gear: ["perfourmer", "Oxi One", "Intellijel Rainmaker", "Sampled Drums", "Squid Salmple", "Eurorack", "ALM MFX", "m8 filter", "Clouds"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/tfqjimkcf8tbk9qu1f93a/per4meroxijanjam.wav?rlkey=q7b8n2pyqpghqd3y03i6xlduy&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 11,
+    title: "101bpmoxicz",
+    subtitle: null,
+    feel: ["spacey", "glitchy", "instrumental", "mysterious"],
+    gear: ["Oxi One", "Cizzle", "Sampled Drums", "Squid Salmple", "Eurorack", "modular", "ALM MFX", "m8 filter", "Clouds"],
+    status: null,
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/zrgj0gj7b5zh2fbfv9ekf/101bpmoxicz.wav?rlkey=1ztzkzblimkhu0muzcr969lzy&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 12,
+    title: "firstcz",
+    subtitle: null,
+    feel: ["spacey", "glitchy", "instrumental", "mysterious"],
+    gear: ["Hermod+", "ALM CZ", "Squid Salmple", "Clouds", "Eurorack"],
+    status: null,
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/3hr2ffo1gtp0soft462jm/firstczmixdown.wav?rlkey=4xck2plrst6qauk7dshwz7c4c&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 13,
+    title: "euroseq-dec29",
+    subtitle: null,
+    feel: ["spacey", "dreamy", "instrumental", "thoughtful", "textural"],
+    gear: ["nerdseq", "Clouds", "Eurorack", "Squid Salmple", "Sampled Drums"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/d57d21ba1nacpxkg60rhj/euroseq-dec29.wav?rlkey=vjlwhgh65yrspi8cy5a16l88c&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 14,
+    title: "NWASLP",
+    subtitle: null,
+    feel: ["glitchy", "layered", "busy", "textural"],
+    gear: ["Dirtywave M8", "Sampled Drums", "samples"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/ut68c2cbonhrpk6hev0js/nwaslp.wav?rlkey=koprx3fr411bzvmcsq0ca9gbk&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 15,
+    title: "tenori on_one_25_81bpm",
+    subtitle: null,
+    feel: ["playful"],
+    gear: ["Tenori:On"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/6xykct4kbawr9iea9t752/tenori-on_one_25_81bpm.wav?rlkey=iysj9wuq028381abau129eqv9&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 16,
+    title: "dream eater",
+    subtitle: null,
+    feel: ["dark", "psychedelic", "uplifting", "glitchy", "electronic", "mysterious"],
+    gear: ["Guitar", "bass guitar", "space echo", "soundtoys", "freakshow industries", "polyend play", "Sampled Drums"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/8uhm4bp8xllu7a4vf8w5w/dream-eater.wav?rlkey=0ofsb6wgxejh9xhluliib20kyd&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 17,
+    title: "psych start",
+    subtitle: null,
+    feel: ["psychedelic", "glitchy", "dreamy"],
+    gear: ["Guitar", "007 burns", "commodore guitar", "samples", "yamaha MT3X tape", "soundtoys", "glitch 2 vst"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/7oq30fv4c3cxuq4l871go/psych-start.wav?rlkey=ja9olaets5bsz7jv7tcldpt7s&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 18,
+    title: "SUNBRK",
+    subtitle: "the bit behind",
+    finalName: "the bit behind",
+    feel: ["jungle", "electronic", "breakbeat", "dark"],
+    gear: ["Sampled Drums", "Dirtywave M8"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/346zp09x6ihdbnhkxlmbe/the-bit-behind.wav?rlkey=9f2ojq2mgyw5sekgri268a5r6&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 19,
+    title: "totally unafraid",
+    subtitle: null,
+    feel: ["dancey", "electronic", "rave", "uptempo", "dark", "intense"],
+    gear: ["octatrack", "Sampled Drums", "samples", "vocal samples", "freakshow industries"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/zbaymbjrfqcjdv8u3kauz/totally-unafraid.wav?rlkey=5pr9ryktdca72yuoace0i1kdc&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 20,
+    title: "C7058-102.wav",
+    subtitle: null,
+    feel: ["glitchy", "lofi", "weird", "instrumental", "electronic"],
+    gear: ["Eurorack", "Sampled Drums", "Hermod+"],
+    status: null,
+    artist: null,
+    release: null,
+    audio: null,
+    hasVocals: false,
+  },
+  {
+    id: 21,
+    title: "modular wander 86bpm",
+    subtitle: null,
+    feel: ["chilled", "spacey", "playful", "instrumental", "dreamy", "short"],
+    gear: ["Eurorack", "Sampled Drums", "Hermod+"],
+    status: null,
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/pdrtj49l8c79q32t1zrnb/modular-wander-86bpm.wav?rlkey=vk7hrej8hcmd0tgmry4gw5zmr&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 22,
+    title: "Fifth Drum 88bpm",
+    subtitle: null,
+    feel: ["electronic", "dark", "disturbing", "intense"],
+    gear: ["Hermod+", "Sampled Drums", "Eurorack"],
+    status: "In Progress",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/3p8drftgix53c8o30cdl5/fifth-drum-88bpm-jam001-copy.wav?rlkey=qbz6c85f2i6qv5hql7do5t28k&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 23,
+    title: "Jungle 2",
+    subtitle: "English Tradition",
+    finalName: "English Tradition",
+    feel: [],
+    gear: ["samples", "Sampled Drums", "Dirtywave M8"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/iz49pzl8rqsz2q7iahy3d/English-Tradition-mastered.wav?rlkey=fs0srblzwf5je2ry4t9nbp3cr&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 24,
+    title: "Fourth Drum 118bpm",
+    subtitle: null,
+    feel: ["electronic", "instrumental", "determined", "dark", "intense"],
+    gear: ["Hermod+", "Sampled Drums", "Eurorack", "Intellijel Rainmaker", "Akemie's Castle"],
+    status: "In Progress",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/3x4r3dm1gr803uyduve2w/118bpm-jam001.wav?rlkey=glxthetyvdyd51ku33z99aexx&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 25,
+    title: "Third Drum 106bpm",
+    subtitle: null,
+    feel: ["instrumental", "spacey", "upbeat", "intense", "uptempo", "electronic"],
+    gear: ["Hermod+", "Sampled Drums", "Eurorack", "freakshow industries", "Intellijel Rainmaker", "Akemie's Castle"],
+    status: "In Progress",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/a8c1f7k2mwjsksrltiogl/Third-Drum-106bpm-Squarp-Hermod.wav?rlkey=2vdp04k0hn1jbwhktkquozkn4&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 26,
+    title: "Second Drum 120bpm",
+    subtitle: null,
+    feel: [],
+    gear: ["Hermod+", "Sampled Drums", "Eurorack", "freakshow industries", "Intellijel Rainmaker", "Akemie's Taiko"],
+    status: "In Progress",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/2k6rj057p8omfkvthg630/120bpm-jam002.wav?rlkey=wrgli5fndcqqtqho56pt2wt6a&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 27,
+    title: "First Drum 120bpm",
+    subtitle: null,
+    feel: [],
+    gear: ["Hermod+", "Sampled Drums", "Eurorack", "freakshow industries"],
+    status: "In Progress",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/xfl2eeg2yjiwdi711uf3q/First-Drum-120bpm-Squarp-Hermod.wav?rlkey=y96vi73cntcn263fgz3x42p5m&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 28,
+    title: "Euston BRK",
+    subtitle: null,
+    feel: ["locked in", "driving", "glitchy", "determined", "breakbeat"],
+    gear: ["Dirtywave M8", "Sampled Drums", "samples"],
+    status: "Finished",
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/7wjqdr35bq8sn9ohoyyol/EustonBRK-mastered.wav?rlkey=fkvq70seaf0q9lqvy5i98u9h9&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 29,
+    title: "play march 118",
+    subtitle: "sunny adam",
+    feel: [],
+    gear: ["space echo", "Sampled Drums", "polyend play", "Oxi One", "Eurorack", "erbe verb", "doepfer bit modifier a189", "freakshow industries", "MegaFM", "Therapsid Mk3"],
+    status: "In Progress",
+    artist: null,
+    release: "cf-album-4",
+    audio: null,
+    hasVocals: false,
+  },
+  {
+    id: 30,
+    title: "wee dumb texture thing",
+    subtitle: null,
+    feel: ["dreamy", "thoughtful", "spacey", "chilled"],
+    gear: ["liven texture", "Sampled Drums", "MPC2500", "freakshow industries"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/qzciuvwcngt7p3nq1wpta/wee-dumb-texture-thing-mastered.wav?rlkey=wwr8sgezgfct520tczr6or1pf&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 31,
+    title: "MEGABREAKK",
+    subtitle: null,
+    feel: ["intense", "uptempo", "instrumental", "breakbeat"],
+    gear: ["Sampled Drums", "samples", "Dirtywave M8"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/f3yrav4z5zfdkub2ys5fv/MEGABREAKK-mastered.wav?rlkey=pneon545x4u1jtygv1yhtkg5t&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 32,
+    title: "TAIPEI",
+    subtitle: null,
+    feel: ["playful", "spacey", "glitchy", "cool", "mysterious", "bassy"],
+    gear: ["Sampled Drums", "samples", "Dirtywave M8"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/fo1stmg5a7bq0lyc70w0d/TAIPEI-mastered.wav?rlkey=aq690dxmzgu6wslw7y2c79cwj&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 33,
+    title: "big dc octa",
+    subtitle: null,
+    feel: ["dark", "driving", "has vocals"],
+    gear: ["Sampled Drums", "samples", "octatrack"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/sq7xr4dvwknv7478ulpna/big-dc-octa.wav?rlkey=vxhokrm791anfjfg73rnpyo8e&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 34,
+    title: "cosmic",
+    subtitle: "octa-01",
+    feel: ["cosmic", "chilled", "lofi", "metallic"],
+    gear: ["Sampled Drums", "samples", "octatrack"],
+    status: "Finished",
+    artist: null,
+    release: "octa-01",
+    audio: "https://www.dropbox.com/scl/fi/9a6g7nlxzdwy6cpnp5v8e/cosmic.wav?rlkey=0oqkxyv7cbsbkp8gdgq1zrt2x&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 35,
+    title: "human machine",
+    subtitle: "octa-01",
+    feel: ["mysterious", "uptempo"],
+    gear: ["Sampled Drums", "samples", "octatrack"],
+    status: "Finished",
+    artist: null,
+    release: "octa-01",
+    audio: "https://www.dropbox.com/scl/fi/606gjvwetjk0x4p9bmy4s/human-machine-sol.wav?rlkey=yxgfilqz4r0jrcre89d1ttxwo&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 36,
+    title: "i have, i earn, i achieve, i do",
+    subtitle: "octa-01",
+    feel: ["deep", "bassy", "driving", "uptempo"],
+    gear: ["Sampled Drums", "samples", "octatrack"],
+    status: "Finished",
+    artist: null,
+    release: "octa-01",
+    audio: "https://www.dropbox.com/scl/fi/j39a3fgiubj68el81dxdo/I-have-I-earn-I-achieve-I-do.wav?rlkey=lip09qfvcgb5ndq5u9jpn543q&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 37,
+    title: "waste of time",
+    subtitle: "octa-01",
+    feel: ["spacey", "glitchy"],
+    gear: ["Sampled Drums", "samples", "octatrack"],
+    status: "Finished",
+    artist: null,
+    release: "octa-01",
+    audio: "https://www.dropbox.com/scl/fi/bc5w0ndkd5qh2bb04fuis/waste-of-time.wav?rlkey=6irt6n6iepg7cf63l1jodoblg&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 38,
+    title: "parrots in the walls",
+    subtitle: "octa-01",
+    feel: ["jaunty", "bright", "weird"],
+    gear: ["Sampled Drums", "samples", "octatrack"],
+    status: "Finished",
+    artist: null,
+    release: "octa-01",
+    audio: "https://www.dropbox.com/scl/fi/y0q910i63mtryu3cv8unx/parrots.wav?rlkey=xev4a1tlftaj6xnpjfc1vk144&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 39,
+    title: "soundwaves",
+    subtitle: "octa-01",
+    feel: ["playful", "dreamy", "uptempo"],
+    gear: ["Sampled Drums", "samples", "octatrack"],
+    status: "Finished",
+    artist: null,
+    release: "octa-01",
+    audio: "https://www.dropbox.com/scl/fi/9lue7sk01j9rvjqxbpz01/soundwaves.wav?rlkey=0b6jc8w6d8kplhij312ld5it5&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 40,
+    title: "responsible",
+    subtitle: "octa-01",
+    feel: ["dark", "uptempo"],
+    gear: ["Dirtywave M8", "Sampled Drums", "samples", "vocal samples"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/ifgf2wllos7clyuc17coa/i-am-responsible.wav?rlkey=qkxn84wnuuufwf4w4b9le1zgr&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 41,
+    title: "all around",
+    subtitle: null,
+    feel: ["dark", "deep", "bassy", "upbeat"],
+    gear: ["Dirtywave M8", "Sampled Drums", "samples", "vocal samples"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/9yrrxbpjlimz5apxp04k9/sound-is-all-around-mastered.wav?rlkey=bh7tzxudhldg3sdmqg1gwxszk&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 42,
+    title: "EVERYDAY",
+    subtitle: null,
+    feel: ["chilled", "lofi"],
+    gear: ["Dirtywave M8", "Ivor Cutler", "vocal samples", "drum samples", "piano"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/c35g4cbrxhccf55m9dpy8/everyday-thatll-do-son.wav?rlkey=vi30oio8pcxupitw7es7279s6&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 43,
+    title: "sojul",
+    finalName: "if we drift",
+    feel: ["dark", "deep", "bassy"],
+    gear: ["Dirtywave M8", "Sampled Drums", "akai s900", "Boss KM6A"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/kpo9uph5r0dex0auekuvb/SOJUL.wav?rlkey=0mow57i9qyawbw57w3g0pvpax&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 44,
+    title: "amerika",
+    subtitle: null,
+    feel: ["political", "weird", "jaunty"],
+    gear: ["Dirtywave M8", "donald trump", "vocal samples", "freakshow industries"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/kn07dfsf2ebcd5f7jway0/amerika.wav?rlkey=1gan5goeyfpc86d4lid0vpxqm&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 45,
+    title: "rainmaker 25 euro",
+    subtitle: null,
+    feel: [],
+    gear: ["Eurorack", "Squid Salmple", "data bender"],
+    status: null,
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/87src3tuj56h9ibfietjw/rainmaker-25-euro.mp3?rlkey=kqtcei3e066eyye2frhfywusn&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 46,
+    title: "90bpm sk1 2025",
+    subtitle: null,
+    feel: ["spacey"],
+    gear: ["Eurorack", "data bender", "casio sk1", "freakshow industries"],
+    status: null,
+    artist: null,
+    release: null,
+    audio: "https://www.dropbox.com/scl/fi/sb0pa1of8hm1yw1lhe9br/90bpm-sk1-2025.wav?rlkey=nw4fgvczd4fnd1atawcm1c5og&dl=1",
+    hasVocals: false,
+  },
+  {
+    id: 47,
+    title: "acid 130bpm",
+    finalName: "how shall we say",
+    feel: ["acid", "weird"],
+    gear: ["Ivor Cutler", "Sampled Drums", "sampled vocals", "Dirtywave M8", "TB3", "safety valve", "KOSMO"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/ponbxm6hlar1vaadlzm9d/how-shall-we-say-mastered.wav?rlkey=hi80b2qwb6zi4jpdbwhb9kvbj&dl=1",
+    hasVocals: true,
+  },
+  {
+    id: 48,
+    title: "omb",
+    subtitle: "music made on laptops",
+    feel: ["chilled", "lofi"],
+    gear: ["Sampled Drums", "logic", "Dirtywave M8", "vocal samples", "david byrne", "samples"],
+    status: "Finished",
+    artist: null,
+    release: "cf-album-4",
+    audio: "https://www.dropbox.com/scl/fi/xvivs2wx9i4ke0a81zviz/omb.wav?rlkey=3cb36b2pffrulm4z6xeshk9h4&dl=1",
+    hasVocals: true,
+  },
+];
+
+// ─── COLOUR PALETTE PER TRACK (cycles) ───────────────────────────────────────
+const COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let currentFilter = 'all';
+let currentSearch = '';
+let currentAudio = null;
+let currentCard = null;
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function buildCard(track, idx) {
+  const colour = COLOURS[idx % COLOURS.length];
+  const rawId = String(track.id).replace(/-/g, '').slice(0, 8); // safe DOM id
+  const audioUrl = toDirectUrl(track.audio);
+  const downloadUrl = track.audio;
+  const displayTitle = track.finalName || track.title;
+
+  const feelTags = track.feel.slice(0, 4).map(f =>
+    `<span class="tag tag-feel">${f}</span>`
+  ).join('');
+
+  const gearStr = track.gear.join(', ');
+
+  const audioSection = audioUrl
+    ? `<div class="player" id="player-${rawId}">
+         <audio id="audio-${rawId}" preload="none" src="${audioUrl}" crossorigin="anonymous"></audio>
+         <div class="player-controls">
+           <button class="play-btn" id="playbtn-${rawId}" aria-label="Play">&#9654;</button>
+           <div class="progress-wrap" id="prog-${rawId}">
+             <div class="progress-fill" id="fill-${rawId}"></div>
+           </div>
+           <div class="player-time" id="time-${rawId}">0:00</div>
+         </div>
+         <a class="download-link" href="${downloadUrl}" target="_blank">↓ download</a>
+       </div>`
+    : `<div class="no-audio">no audio yet</div>`;
+
+  return `
+    <div class="track-card" id="card-${rawId}" style="--track-color:${colour}" data-id="${rawId}">
+      <div class="track-main">
+        <div class="track-header">
+          <div class="track-title">${displayTitle}</div>
+        </div>
+        <div class="track-tags">
+          ${feelTags}
+          ${track.hasVocals ? '<span class="tag tag-feel">vocals</span>' : ''}
+        </div>
+        <div class="track-gear"><strong>gear:</strong> ${gearStr || '—'}</div>
+      </div>
+      <div class="track-audio-col">
+        ${audioSection}
+      </div>
+    </div>`;
+}
+
+function getFiltered() {
+  return TRACKS.filter(t => {
+    const q = currentSearch.toLowerCase();
+    const searchMatch = !q || [
+      t.title, t.finalName, ...t.feel, ...t.gear
+    ].filter(Boolean).some(s => s.toLowerCase().includes(q));
+
+    let filterMatch = true;
+    if (currentFilter === 'has-audio') filterMatch = !!t.audio;
+    else if (currentFilter === 'has-vocals') filterMatch = t.hasVocals;
+    else if (currentFilter !== 'all') {
+      filterMatch = t.feel.some(f => f.toLowerCase() === currentFilter);
+    }
+
+    return searchMatch && filterMatch;
+  });
+}
+
+function render() {
+  const filtered = getFiltered();
+  const grid = document.getElementById('tracks-grid');
+  const empty = document.getElementById('empty-state');
+  const countEl = document.getElementById('visible-count');
+
+  grid.innerHTML = filtered.map((t, i) => buildCard(t, i)).join('');
+  countEl.textContent = filtered.length;
+  empty.style.display = filtered.length === 0 ? 'block' : 'none';
+
+  // Attach custom player logic
+  filtered.forEach(track => {
+    if (!track.audio) return;
+    const rawId = String(track.id).replace(/-/g, '').slice(0, 8);
+    const audio  = document.getElementById(`audio-${rawId}`);
+    const card   = document.getElementById(`card-${rawId}`);
+    const btn    = document.getElementById(`playbtn-${rawId}`);
+    const fill   = document.getElementById(`fill-${rawId}`);
+    const prog   = document.getElementById(`prog-${rawId}`);
+    const timeEl = document.getElementById(`time-${rawId}`);
+    if (!audio || !btn) return;
+
+    function fmt(s) {
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60).toString().padStart(2, '0');
+      return `${m}:${sec}`;
+    }
+
+    btn.addEventListener('click', () => {
+      if (audio.paused) {
+        if (currentAudio && currentAudio !== audio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+        }
+        if (currentCard) {
+          currentCard.classList.remove('playing');
+          const oldBtn = currentCard.querySelector('.play-btn');
+          if (oldBtn) oldBtn.innerHTML = '&#9654;';
+          const oldFill = currentCard.querySelector('.progress-fill');
+          if (oldFill) oldFill.style.width = '0%';
+        }
+        audio.play().catch(err => {
+          console.warn(`Could not play ${track.title}:`, err);
+          btn.innerHTML = '&#9654;';
+          card.classList.remove('playing');
+        });
+        currentAudio = audio;
+        currentCard = card;
+        card.classList.add('playing');
+        btn.innerHTML = '&#9646;&#9646;';
+      } else {
+        audio.pause();
+        btn.innerHTML = '&#9654;';
+        card.classList.remove('playing');
+      }
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+        timeEl.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration);
+      }
+    });
+
+    audio.addEventListener('ended', () => {
+      btn.innerHTML = '&#9654;';
+      fill.style.width = '0%';
+      timeEl.textContent = '0:00';
+      card.classList.remove('playing');
+    });
+
+    prog.addEventListener('click', e => {
+      if (!audio.duration) return;
+      const rect = prog.getBoundingClientRect();
+      audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+    });
+  });
+}
+
+// ─── LOADING STATE ────────────────────────────────────────────────────────────
+function showLoading() {
+  const grid = document.getElementById('tracks-grid');
+  grid.innerHTML = `
+    <div style="padding:3rem 1rem;text-align:center;color:var(--muted);font-size:13px;letter-spacing:0.1em;">
+      <div style="font-size:2rem;margin-bottom:1rem;animation:pulse 1.2s infinite;">⟳</div>
+      LOADING FROM NOTION...
+    </div>`;
+}
+
+function showError(msg) {
+  const grid = document.getElementById('tracks-grid');
+  grid.innerHTML = `
+    <div style="padding:3rem 1rem;text-align:center;color:var(--hot);font-size:13px;">
+      <div style="font-size:2rem;margin-bottom:1rem;">⚠</div>
+      ${msg}
+    </div>`;
+}
+
+// ─── FETCH FROM WORKER ────────────────────────────────────────────────────────
+async function loadTracks() {
+  // If no worker URL set yet, fall back to the hardcoded data gracefully
+  if (!WORKER_URL || WORKER_URL === 'YOUR_WORKER_URL_HERE') {
+    if (TRACKS.length > 0) {
+      render();
+    } else {
+      showError('Set WORKER_URL in the script to load live data from Notion.');
+    }
+    return;
+  }
+
+  showLoading();
+  try {
+    const res = await fetch(WORKER_URL);
+    if (!res.ok) throw new Error(`Worker returned ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    TRACKS = data.tracks;
+    render();
+  } catch (err) {
+    console.error('Failed to load tracks:', err);
+    // Fall back to hardcoded data if available, otherwise show error
+    if (TRACKS.length > 0) {
+      console.warn('Falling back to hardcoded data');
+      render();
+    } else {
+      showError('Could not load tracks. Check Worker URL and Notion integration.');
+    }
+  }
+}
+
+// ─── EVENTS ───────────────────────────────────────────────────────────────────
+document.getElementById('search').addEventListener('input', e => {
+  currentSearch = e.target.value;
+  render();
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    rend
