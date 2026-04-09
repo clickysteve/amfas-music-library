@@ -83,6 +83,7 @@
   .track-main { min-width: 0; padding: 0.75rem 1.25rem; }
   .track-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.8rem; margin-bottom: 0.35rem; }
   .track-title { font-family: var(--display); font-size: 17px; font-weight: 700; color: var(--text); word-break: break-word; }
+  .track-duration { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.05em; white-space: nowrap; opacity: 0.7; }
   .track-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.35rem; }
   .tag { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.2em 0.55em; border: 1px solid; font-weight: 700; }
   .tag-feel { border-color: rgba(255,170,0,0.4); color: var(--acid); background: rgba(255,170,0,0.07); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
@@ -107,6 +108,7 @@
   .play-btn:active { transform: scale(0.95); }
   .progress-wrap { flex: 1; height: 5px; background: var(--border); cursor: pointer; position: relative; border-radius: 2px; overflow: hidden; }
   .progress-fill { height: 100%; width: 0%; background: var(--track-color, var(--acid)); border-radius: 2px; transition: width 0.1s linear; pointer-events: none; }
+  .waveform-canvas { flex: 1; height: 36px; cursor: pointer; border-radius: 2px; }
   .player-time { font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 70px; text-align: right; }
   .download-link { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.15s; display: inline-block; }
   .download-link:hover { color: var(--acid); }
@@ -324,6 +326,185 @@ function trackPermalink(track) {
   return '#amfas-' + trackHash(track.id) + '-' + slug;
 }
 
+// ── WAVEFORM CACHE ────────────────────────────────────────────
+var waveformCache = {};
+(function loadWaveformCache() {
+  try {
+    var stored = localStorage.getItem('amfas-waveforms');
+    if (stored) waveformCache = JSON.parse(stored);
+  } catch(e) {}
+})();
+function getWaveformCache(trackId) {
+  return waveformCache[trackId] || null;
+}
+function setWaveformCache(trackId, points) {
+  waveformCache[trackId] = points;
+  try { localStorage.setItem('amfas-waveforms', JSON.stringify(waveformCache)); } catch(e) {}
+}
+
+// ── WAVEFORM GENERATION ───────────────────────────────────────
+var audioCtx = null;
+var waveformPending = {};
+function generateWaveform(trackId) {
+  if (waveformPending[trackId] || getWaveformCache(trackId)) return;
+  var track = TRACKS.find(function(t) { return t.id === trackId; });
+  if (!track || !track.audio) return;
+  waveformPending[trackId] = true;
+  var url = toStreamUrl(track.audio);
+  fetch(url).then(function(res) { return res.arrayBuffer(); }).then(function(buf) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx.decodeAudioData(buf);
+  }).then(function(decoded) {
+    var raw = decoded.getChannelData(0);
+    var samples = 200;
+    var blockSize = Math.floor(raw.length / samples);
+    var points = [];
+    for (var i = 0; i < samples; i++) {
+      var sum = 0;
+      var start = i * blockSize;
+      for (var j = 0; j < blockSize; j++) {
+        sum += Math.abs(raw[start + j]);
+      }
+      points.push(sum / blockSize);
+    }
+    // Normalize to 0-1
+    var max = Math.max.apply(null, points) || 1;
+    points = points.map(function(p) { return Math.round((p / max) * 1000) / 1000; });
+    setWaveformCache(trackId, points);
+    delete waveformPending[trackId];
+    // Re-render the card's waveform if visible
+    upgradeToWaveform(trackId);
+  }).catch(function() {
+    delete waveformPending[trackId];
+  });
+}
+
+function upgradeToWaveform(trackId) {
+  var sid = safeId(trackId);
+  var progWrap = document.getElementById('prog-' + sid);
+  if (progWrap) {
+    // Replace progress bar with canvas
+    var canvas = document.createElement('canvas');
+    canvas.className = 'waveform-canvas';
+    canvas.id = 'wave-' + sid;
+    canvas.dataset.trackId = trackId;
+    canvas.height = 36;
+    progWrap.parentNode.replaceChild(canvas, progWrap);
+  }
+  drawWaveform(trackId);
+}
+
+// ── WAVEFORM DRAWING ──────────────────────────────────────────
+function drawWaveform(trackId) {
+  var sid = safeId(trackId);
+  var canvas = document.getElementById('wave-' + sid);
+  if (!canvas) return;
+  var points = getWaveformCache(trackId);
+  if (!points) return;
+
+  var w = canvas.offsetWidth || 200;
+  var h = 36;
+  canvas.width = w * (window.devicePixelRatio || 1);
+  canvas.height = h * (window.devicePixelRatio || 1);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+  var card = canvas.closest('.track-card');
+  var color = card ? getComputedStyle(card).getPropertyValue('--track-color').trim() : '#ffaa00';
+  var barW = Math.max(1, (w / points.length) - 0.5);
+  var gap = w / points.length;
+  var pct = 0;
+
+  // Calculate progress percentage
+  if (currentTrackId === trackId && globalAudio.duration) {
+    pct = globalAudio.currentTime / globalAudio.duration;
+  }
+
+  ctx.clearRect(0, 0, w, h);
+  for (var i = 0; i < points.length; i++) {
+    var barH = Math.max(2, points[i] * (h - 4));
+    var x = i * gap;
+    var y = (h - barH) / 2;
+    if (i / points.length <= pct) {
+      ctx.fillStyle = color;
+    } else {
+      ctx.fillStyle = 'rgba(50,45,24,0.8)';
+    }
+    ctx.fillRect(x, y, barW, barH);
+  }
+}
+
+function drawAllWaveforms() {
+  document.querySelectorAll('.waveform-canvas').forEach(function(canvas) {
+    var trackId = canvas.dataset.trackId;
+    if (trackId) drawWaveform(trackId);
+  });
+}
+
+// ── DURATION CACHE & LOADING ──────────────────────────────────
+var durationCache = {};
+(function loadDurationCache() {
+  try {
+    var stored = localStorage.getItem('amfas-durations');
+    if (stored) durationCache = JSON.parse(stored);
+  } catch(e) {}
+})();
+function saveDurationCache() {
+  try { localStorage.setItem('amfas-durations', JSON.stringify(durationCache)); } catch(e) {}
+}
+
+var durationObserver = null;
+function setupDurationObserver() {
+  if (durationObserver) durationObserver.disconnect();
+  durationObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (!entry.isIntersecting) return;
+      var el = entry.target;
+      var trackId = el.dataset.trackId;
+      if (!trackId) return;
+      durationObserver.unobserve(el);
+      loadDuration(trackId);
+    });
+  }, { rootMargin: '200px' });
+
+  document.querySelectorAll('.track-card[data-observe-dur]').forEach(function(card) {
+    durationObserver.observe(card);
+  });
+}
+
+function loadDuration(trackId) {
+  var sid = safeId(trackId);
+  var durEl = document.getElementById('dur-' + sid);
+
+  // Check cache first
+  if (durationCache[trackId]) {
+    if (durEl) durEl.textContent = fmt(durationCache[trackId]);
+    return;
+  }
+
+  var track = TRACKS.find(function(t) { return t.id === trackId; });
+  if (!track || !track.audio) return;
+
+  var tempAudio = new Audio();
+  tempAudio.preload = 'metadata';
+  tempAudio.addEventListener('loadedmetadata', function() {
+    if (tempAudio.duration && isFinite(tempAudio.duration)) {
+      durationCache[trackId] = tempAudio.duration;
+      saveDurationCache();
+      if (durEl) durEl.textContent = fmt(tempAudio.duration);
+    }
+    tempAudio.removeAttribute('src');
+    tempAudio.load();
+  });
+  tempAudio.addEventListener('error', function() {
+    tempAudio.removeAttribute('src');
+    tempAudio.load();
+  });
+  tempAudio.src = toStreamUrl(track.audio);
+}
+
 // ── SORT ───────────────────────────────────────────────────────
 function getSorted(tracks) {
   var sorted = tracks.slice();
@@ -397,6 +578,9 @@ function playTrack(trackId) {
   updateAllUI();
 
   globalAudio.src = toStreamUrl(track.audio);
+
+  // Generate waveform in background if not cached
+  generateWaveform(trackId);
 
   function onCanPlay() {
     globalAudio.removeEventListener('canplay', onCanPlay);
@@ -503,8 +687,17 @@ function updateProgress() {
     var sid = safeId(currentTrackId);
     var cardFill = document.getElementById('fill-' + sid);
     var cardTime = document.getElementById('time-' + sid);
+    var waveCanvas = document.getElementById('wave-' + sid);
     if (cardFill) cardFill.style.width = pct + '%';
+    if (waveCanvas) drawWaveform(currentTrackId);
     if (cardTime) cardTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : (playerState === 'loading' ? 'loading\u2026' : '0:00');
+    // Update duration display from playing audio
+    if (dur && !durationCache[currentTrackId]) {
+      durationCache[currentTrackId] = dur;
+      saveDurationCache();
+      var durEl = document.getElementById('dur-' + sid);
+      if (durEl) durEl.textContent = fmt(dur);
+    }
   }
 }
 
@@ -582,10 +775,13 @@ function buildCard(track, idx) {
   var gearStr = (track.gear || []).join(', ');
   var favActive = isFav(track.id) ? ' is-fav' : '';
 
+  var hasWaveform = getWaveformCache(track.id);
   var audioSection = streamUrl
     ? '<div class="player"><div class="player-controls">'
       + '<button class="play-btn" data-track-id="' + track.id + '" aria-label="Play">&#9654;</button>'
-      + '<div class="progress-wrap" id="prog-' + sid + '"><div class="progress-fill" id="fill-' + sid + '"></div></div>'
+      + (hasWaveform
+        ? '<canvas class="waveform-canvas" id="wave-' + sid + '" data-track-id="' + track.id + '" height="36"></canvas>'
+        : '<div class="progress-wrap" id="prog-' + sid + '"><div class="progress-fill" id="fill-' + sid + '"></div></div>')
       + '<div class="player-time" id="time-' + sid + '">0:00</div>'
       + '</div>'
       + '<a class="download-link" href="' + downloadUrl + '" target="_blank">&darr; download</a>'
@@ -598,9 +794,9 @@ function buildCard(track, idx) {
     + '<button class="action-btn fav-btn' + favActive + '" data-track-id="' + track.id + '" title="' + (isFav(track.id) ? 'Remove from favourites' : 'Add to favourites') + '">' + (isFav(track.id) ? '&#9829;' : '&#9825;') + '</button>'
     + '</div>';
 
-  return '<div class="track-card" id="card-' + sid + '" style="--track-color:' + colour + '">'
+  return '<div class="track-card" id="card-' + sid + '"' + (streamUrl ? ' data-observe-dur data-track-id="' + track.id + '"' : '') + ' style="--track-color:' + colour + '">'
     + '<div class="track-main">'
-    + '<div class="track-header"><div class="track-title">' + displayTitle + '</div>' + newBadge + '</div>'
+    + '<div class="track-header"><div class="track-title">' + displayTitle + '</div>' + newBadge + (streamUrl ? '<span class="track-duration" id="dur-' + sid + '"></span>' : '') + '</div>'
     + '<div class="track-tags">' + feelTags + (track.hasVocals ? '<span class="tag tag-feel" data-feel="has-vocals" title="Click to filter by vocals">vocals</span>' : '') + '</div>'
     + '<div class="track-gear"><strong>gear used:</strong> ' + (gearStr || '&mdash;') + '</div>'
     + actionsRow
@@ -618,6 +814,16 @@ function render() {
   countEl.textContent = filtered.length;
   // Restore playing state on visible cards
   updateAllUI();
+  // Set up duration loading and draw cached waveforms
+  setupDurationObserver();
+  drawAllWaveforms();
+  // Show cached durations immediately
+  filtered.forEach(function(t) {
+    if (durationCache[t.id]) {
+      var durEl = document.getElementById('dur-' + safeId(t.id));
+      if (durEl) durEl.textContent = fmt(durationCache[t.id]);
+    }
+  });
 }
 
 // ── DEEP LINKS ─────────────────────────────────────────────────
@@ -754,6 +960,17 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
   var playBtn = e.target.closest('.play-btn[data-track-id]');
   if (playBtn) {
     playTrack(playBtn.dataset.trackId);
+    return;
+  }
+
+  // Waveform canvas seek
+  var waveCanvas = e.target.closest('.waveform-canvas');
+  if (waveCanvas && currentTrackId && globalAudio.duration) {
+    var wsid = safeId(currentTrackId);
+    if (waveCanvas.id === 'wave-' + wsid) {
+      var wrect = waveCanvas.getBoundingClientRect();
+      globalAudio.currentTime = ((e.clientX - wrect.left) / wrect.width) * globalAudio.duration;
+    }
     return;
   }
 
