@@ -116,7 +116,7 @@
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .spinning { display: inline-block; animation: spin 1s linear infinite; }
 
-  /* ââ Mini Player ââââââââââââââââââââââââââââââââââââââââââââââ */
+  /* ── Mini Player ────────────────────────────────────────────── */
   .mini-player { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #0f0d08; border-top: 2px solid var(--border); transform: translateY(100%); transition: transform 0.3s ease; }
   .mini-player.active { transform: translateY(0); }
   .mini-player-inner { display: flex; align-items: center; gap: 1rem; padding: 0.6rem 2rem; }
@@ -233,7 +233,7 @@
   </div>
 </footer>
 
-<!-- ââ Mini Player ââââââââââââââââââââââââââââââââââââââââââââââââ -->
+<!-- ── Mini Player ──────────────────────────────────────────────── -->
 <div class="mini-player" id="mini-player">
   <span class="kbd-hint">spacebar = play/pause &middot; arrows = skip</span>
   <div class="mini-player-inner">
@@ -254,12 +254,12 @@
 </div>
 
 <script>
-// ââ CONFIG âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── CONFIG ─────────────────────────────────────────────────────
 var API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
 var COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
 var NEW_DAYS = 30;
 
-// ââ STATE ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── STATE ──────────────────────────────────────────────────────
 var TRACKS = [];
 var currentFilter = 'has-audio';
 var currentSearch = '';
@@ -269,11 +269,11 @@ var playerState = 'idle'; // idle | loading | playing | paused
 var animFrameId = null;
 var pendingDeepLink = null;
 
-// ââ GLOBAL AUDIO âââââââââââââââââââââââââââââââââââââââââââââââ
+// ── GLOBAL AUDIO ───────────────────────────────────────────────
 var globalAudio = new Audio();
 globalAudio.preload = 'none';
 
-// ââ DOM REFS âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── DOM REFS ───────────────────────────────────────────────────
 var miniPlayer = document.getElementById('mini-player');
 var miniPlayBtn = document.getElementById('mini-play');
 var miniTitle = document.getElementById('mini-title');
@@ -281,7 +281,7 @@ var miniFill = document.getElementById('mini-fill');
 var miniProg = document.getElementById('mini-prog');
 var miniTime = document.getElementById('mini-time');
 
-// ââ FAVOURITES âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── FAVOURITES ─────────────────────────────────────────────────
 function getFavs() {
   try { return JSON.parse(localStorage.getItem('amfas-favs') || '[]'); } catch(e) { return []; }
 }
@@ -297,7 +297,7 @@ function toggleFav(id) {
   return idx === -1;
 }
 
-// ââ HELPERS ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── HELPERS ────────────────────────────────────────────────────
 function isNew(track) {
   if (!track.createdAt) return false;
   return (Date.now() - new Date(track.createdAt).getTime()) < NEW_DAYS * 24 * 60 * 60 * 1000;
@@ -315,8 +315,16 @@ function fmt(s) {
   return Math.floor(s / 60) + ':' + Math.floor(s % 60).toString().padStart(2, '0');
 }
 function safeId(id) { return id.replace(/-/g, '').slice(0, 20); }
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+}
+function trackHash(id) { return id.replace(/-/g, '').slice(0, 5); }
+function trackPermalink(track) {
+  var slug = slugify(track.finalName || track.title);
+  return '#amfas-' + trackHash(track.id) + '-' + slug;
+}
 
-// ââ SORT âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── SORT ───────────────────────────────────────────────────────
 function getSorted(tracks) {
   var sorted = tracks.slice();
   switch (currentSort) {
@@ -328,7 +336,7 @@ function getSorted(tracks) {
   return sorted;
 }
 
-// ââ FILTER ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── FILTER ──────────────────────────────────────────────────────
 function getFiltered() {
   var favs = getFavs();
   var filtered = TRACKS.filter(function(t) {
@@ -345,7 +353,7 @@ function getFiltered() {
   return getSorted(filtered);
 }
 
-// ââ PLAYER âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── PLAYER ─────────────────────────────────────────────────────
 function playTrack(trackId) {
   var track = TRACKS.find(function(t) { return t.id === trackId; });
   if (!track || !track.audio) return;
@@ -456,7 +464,7 @@ function stopPlayback() {
   updateAllUI();
 }
 
-// ââ AUDIO EVENTS âââââââââââââââââââââââââââââââââââââââââââââââ
+// ── AUDIO EVENTS ───────────────────────────────────────────────
 globalAudio.addEventListener('ended', function() {
   skipTrack(1); // auto-advance
 });
@@ -469,7 +477,7 @@ globalAudio.addEventListener('error', function() {
   }
 });
 
-// ââ ANIMATION LOOP âââââââââââââââââââââââââââââââââââââââââââââ
+// ── ANIMATION LOOP ─────────────────────────────────────────────
 function startAnimLoop() {
   if (animFrameId) return;
   function loop() {
@@ -500,7 +508,7 @@ function updateProgress() {
   }
 }
 
-// ââ UI UPDATE ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── UI UPDATE ──────────────────────────────────────────────────
 function updateAllUI() {
   // Mini-player visibility & content
   if (currentTrackId && playerState !== 'idle') {
@@ -560,7 +568,7 @@ function updateAllUI() {
   updateProgress();
 }
 
-// ââ CARD BUILDER âââââââââââââââââââââââââââââââââââââââââââââââ
+// ── CARD BUILDER ───────────────────────────────────────────────
 function buildCard(track, idx) {
   var colour = COLOURS[idx % COLOURS.length];
   var sid = safeId(track.id);
@@ -585,7 +593,7 @@ function buildCard(track, idx) {
     : '<div class="no-audio">no audio yet</div>';
 
   var actionsRow = '<div class="track-actions">'
-    + '<button class="action-btn copy-link-btn" data-safe-id="' + sid + '" title="Copy link to this track"># link</button>'
+    + '<button class="action-btn copy-link-btn" data-track-id="' + track.id + '" title="Copy link to this track"># link</button>'
     + '<button class="action-btn copy-credit-btn" data-track-name="' + displayTitle.replace(/"/g, '&quot;') + '" title="Copy credit line to clipboard">&#x2398; credit</button>'
     + '<button class="action-btn fav-btn' + favActive + '" data-track-id="' + track.id + '" title="' + (isFav(track.id) ? 'Remove from favourites' : 'Add to favourites') + '">' + (isFav(track.id) ? '&#9829;' : '&#9825;') + '</button>'
     + '</div>';
@@ -601,7 +609,7 @@ function buildCard(track, idx) {
     + '</div>';
 }
 
-// ââ RENDER âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── RENDER ─────────────────────────────────────────────────────
 function render() {
   var filtered = getFiltered();
   var grid = document.getElementById('tracks-grid');
@@ -612,18 +620,35 @@ function render() {
   updateAllUI();
 }
 
-// ââ DEEP LINKS âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── DEEP LINKS ─────────────────────────────────────────────────
 function handleDeepLink() {
   var hash = window.location.hash;
-  if (!hash || !hash.startsWith('#t-')) return;
-  var sid = hash.slice(3);
+  if (!hash) return;
+  var track = null;
+  // New format: #amfas-{5char}-{slug}
+  if (hash.startsWith('#amfas-')) {
+    var rest = hash.slice(7); // after '#amfas-'
+    var h = rest.slice(0, 5);
+    track = TRACKS.find(function(t) { return trackHash(t.id) === h; });
+  }
+  // Legacy format: #t-{safeId}
+  else if (hash.startsWith('#t-')) {
+    var sid = hash.slice(3);
+    track = TRACKS.find(function(t) { return safeId(t.id) === sid; });
+  }
+  if (!track) return;
+  // Silently update URL to current friendly format
+  var canonical = trackPermalink(track);
+  if (hash !== canonical) {
+    history.replaceState(null, '', canonical);
+  }
   // Switch to "all" filter so the linked track is visible
   currentFilter = 'all';
   document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
   var allBtn = document.querySelector('.filter-btn[data-filter="all"]');
   if (allBtn) allBtn.classList.add('active');
   render();
-  var card = document.getElementById('card-' + sid);
+  var card = document.getElementById('card-' + safeId(track.id));
   if (card) {
     setTimeout(function() {
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -633,7 +658,7 @@ function handleDeepLink() {
   }
 }
 
-// ââ LOAD TRACKS ââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── LOAD TRACKS ────────────────────────────────────────────────
 function showState(icon, message, isError) {
   document.getElementById('tracks-grid').innerHTML = '<div class="state-message' + (isError ? ' error' : '') + '"><span class="icon' + (icon === 'spinning' ? ' spinning' : '') + '">' + icon + '</span>' + message + '</div>';
   document.getElementById('visible-count').textContent = '\u2014';
@@ -650,7 +675,7 @@ function loadTracks() {
       if (data.error) throw new Error(data.error);
       TRACKS = data.tracks;
       // Check for deep link
-      if (window.location.hash && window.location.hash.startsWith('#t-')) {
+      if (window.location.hash && (window.location.hash.startsWith('#amfas-') || window.location.hash.startsWith('#t-'))) {
         handleDeepLink();
       } else {
         render();
@@ -663,13 +688,13 @@ function loadTracks() {
     });
 }
 
-// ââ SEARCH âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── SEARCH ─────────────────────────────────────────────────────
 document.getElementById('search').addEventListener('input', function(e) {
   currentSearch = e.target.value;
   render();
 });
 
-// ââ FILTER BUTTONS âââââââââââââââââââââââââââââââââââââââââââââ
+// ── FILTER BUTTONS ─────────────────────────────────────────────
 document.querySelectorAll('.filter-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -679,18 +704,18 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
   });
 });
 
-// ââ SORT DROPDOWN ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── SORT DROPDOWN ──────────────────────────────────────────────
 document.getElementById('sort-select').addEventListener('change', function(e) {
   currentSort = e.target.value;
   render();
 });
 
-// ââ SHUFFLE BUTTON âââââââââââââââââââââââââââââââââââââââââââââ
+// ── SHUFFLE BUTTON ─────────────────────────────────────────────
 document.getElementById('shuffle-btn').addEventListener('click', function() {
   shufflePlay();
 });
 
-// ââ MINI-PLAYER CONTROLS âââââââââââââââââââââââââââââââââââââââ
+// ── MINI-PLAYER CONTROLS ───────────────────────────────────────
 document.getElementById('mini-play').addEventListener('click', function() {
   if (playerState === 'loading') {
     stopPlayback();
@@ -707,7 +732,7 @@ miniProg.addEventListener('click', function(e) {
   globalAudio.currentTime = ((e.clientX - rect.left) / rect.width) * globalAudio.duration;
 });
 
-// ââ KEYBOARD SHORTCUTS âââââââââââââââââââââââââââââââââââââââââ
+// ── KEYBOARD SHORTCUTS ─────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
   // Ignore if typing in an input
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
@@ -723,7 +748,7 @@ document.addEventListener('keydown', function(e) {
   if (e.code === 'ArrowRight') { e.preventDefault(); skipTrack(1); }
 });
 
-// ââ EVENT DELEGATION ON TRACKS GRID ââââââââââââââââââââââââââââ
+// ── EVENT DELEGATION ON TRACKS GRID ────────────────────────────
 document.getElementById('tracks-grid').addEventListener('click', function(e) {
   // Play button
   var playBtn = e.target.closest('.play-btn[data-track-id]');
@@ -759,8 +784,8 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
   // Copy link button
   var linkBtn = e.target.closest('.copy-link-btn');
   if (linkBtn) {
-    var sid = linkBtn.dataset.safeId;
-    var url = window.location.origin + window.location.pathname + '#t-' + sid;
+    var linkTrack = TRACKS.find(function(t) { return t.id === linkBtn.dataset.trackId; });
+    var url = window.location.origin + window.location.pathname + (linkTrack ? trackPermalink(linkTrack) : '');
     navigator.clipboard.writeText(url).then(function() {
       linkBtn.classList.add('copied');
       linkBtn.textContent = '\u2713 copied';
@@ -795,12 +820,12 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
   }
 });
 
-// ââ HASH CHANGE ââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── HASH CHANGE ────────────────────────────────────────────────
 window.addEventListener('hashchange', function() {
   if (TRACKS.length > 0) handleDeepLink();
 });
 
-// ââ INIT âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── INIT ───────────────────────────────────────────────────────
 loadTracks();
 </script>
 </body>
