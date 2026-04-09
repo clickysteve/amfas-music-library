@@ -211,7 +211,7 @@
 </div>
 
 <main>
-  <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load &middot; spacebar = play/pause</div>
+  <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load &middot; spacebar = play/pause &middot; arrows = skip</div>
   <div class="tracks-grid" id="tracks-grid"></div>
 </main>
 
@@ -235,7 +235,7 @@
 
 <!-- ââ Mini Player ââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <div class="mini-player" id="mini-player">
-  <span class="kbd-hint">spacebar = play/pause</span>
+  <span class="kbd-hint">spacebar = play/pause &middot; arrows = skip</span>
   <div class="mini-player-inner">
     <div class="mini-controls">
       <button class="mini-btn" id="mini-prev" title="Previous track">&#x23EE;</button>
@@ -719,6 +719,8 @@ document.addEventListener('keydown', function(e) {
       togglePlayPause();
     }
   }
+  if (e.code === 'ArrowLeft') { e.preventDefault(); skipTrack(-1); }
+  if (e.code === 'ArrowRight') { e.preventDefault(); skipTrack(1); }
 });
 
 // ââ EVENT DELEGATION ON TRACKS GRID ââââââââââââââââââââââââââââ
