@@ -568,7 +568,11 @@ function playTrack(trackId) {
     }
   }
 
-  // New track
+  // New track — clear old card's time display
+  if (currentTrackId) {
+    var oldTimeEl = document.getElementById('time-' + safeId(currentTrackId));
+    if (oldTimeEl) oldTimeEl.textContent = '';
+  }
   if (playerState !== 'idle') {
     globalAudio.pause();
     stopAnimLoop();
@@ -640,6 +644,11 @@ function shufflePlay() {
 }
 
 function stopPlayback() {
+  // Clear time display on current card before resetting
+  if (currentTrackId) {
+    var stopTimeEl = document.getElementById('time-' + safeId(currentTrackId));
+    if (stopTimeEl) stopTimeEl.textContent = '';
+  }
   globalAudio.pause();
   globalAudio.removeAttribute('src');
   globalAudio.load();
@@ -691,7 +700,7 @@ function updateProgress() {
     var waveCanvas = document.getElementById('wave-' + sid);
     if (cardFill) cardFill.style.width = pct + '%';
     if (waveCanvas) drawWaveform(currentTrackId);
-    if (cardTime) cardTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : (playerState === 'loading' ? 'loading\u2026' : '');
+    if (cardTime) cardTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : '';
     // Update duration display from playing audio
     if (dur && !durationCache[currentTrackId]) {
       durationCache[currentTrackId] = dur;
