@@ -36,7 +36,7 @@
   header::before { content: ''; position: absolute; top: -80px; left: -80px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,170,0,0.14) 0%, transparent 70%); pointer-events: none; }
   header::after { content: ''; position: absolute; bottom: -100px; right: -50px; width: 500px; height: 300px; background: radial-gradient(circle, rgba(255,68,0,0.1) 0%, transparent 70%); pointer-events: none; }
   .header-top { margin-bottom: 2rem; }
-  .header-identity { display: flex; align-items: center; gap: 1.5rem; }
+  .header-identity { display: flex; align-items: center; gap: 1.5rem; cursor: pointer; }
   .logo-circle { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--acid); flex-shrink: 0; }
   .site-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--acid); margin-bottom: 0.6rem; }
   h1 { font-family: var(--display); font-size: clamp(1.8rem, 5vw, 4rem); font-weight: 900; line-height: 0.95; letter-spacing: -0.03em; color: var(--text); }
@@ -163,13 +163,13 @@
 
 <header>
   <div class="header-top">
-    <div class="header-identity">
+    <a href="https://clickysteve.github.io/amfas-music-library/" class="header-identity" style="text-decoration:none;color:inherit;-webkit-text-fill-color:inherit;">
       <img class="logo-circle" src="https://torch-jumbo-a57.notion.site/image/attachment%3Abcca6a02-6ef4-4456-9676-0a4dc0cdfafb%3Aamfaslogo2_copy.png?id=1aa9e578-d459-80da-9b93-e7f346f89c07&table=block&spaceId=b2cdeeaf-ac10-4648-b22a-71fb48a05239&width=250&userId=&cache=v2" alt="allmyfriendsaresynths logo">
       <div>
         <div class="site-label">allmyfriendsaresynths // music library</div>
         <h1>The AMFAS<br><span>Music Library</span></h1>
       </div>
-    </div>
+    </a>
   </div>
   <div class="header-body">
     <div class="header-desc">
