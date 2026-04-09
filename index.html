@@ -109,7 +109,8 @@
   .progress-wrap { flex: 1; height: 5px; background: var(--border); cursor: pointer; position: relative; border-radius: 2px; overflow: hidden; }
   .progress-fill { height: 100%; width: 0%; background: var(--track-color, var(--acid)); border-radius: 2px; transition: width 0.1s linear; pointer-events: none; }
   .waveform-canvas { flex: 1; height: 36px; cursor: pointer; border-radius: 2px; }
-  .player-time { font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 70px; text-align: right; }
+  .player-meta { display: flex; align-items: center; justify-content: space-between; }
+  .player-time { font-size: 11px; color: var(--muted); white-space: nowrap; text-align: right; }
   .download-link { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.15s; display: inline-block; }
   .download-link:hover { color: var(--acid); }
   .state-message { text-align: center; padding: 4rem 2rem; color: var(--muted); font-size: 13px; letter-spacing: 0.05em; }
@@ -690,7 +691,7 @@ function updateProgress() {
     var waveCanvas = document.getElementById('wave-' + sid);
     if (cardFill) cardFill.style.width = pct + '%';
     if (waveCanvas) drawWaveform(currentTrackId);
-    if (cardTime) cardTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : (playerState === 'loading' ? 'loading\u2026' : '0:00');
+    if (cardTime) cardTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : (playerState === 'loading' ? 'loading\u2026' : '');
     // Update duration display from playing audio
     if (dur && !durationCache[currentTrackId]) {
       durationCache[currentTrackId] = dur;
@@ -727,6 +728,9 @@ function updateAllUI() {
   // Card states
   document.querySelectorAll('.track-card.playing, .track-card.loading').forEach(function(c) {
     c.classList.remove('playing', 'loading');
+    // Clear time display on non-current cards
+    var timeEl = c.querySelector('.player-time');
+    if (timeEl) timeEl.textContent = '';
   });
   document.querySelectorAll('.play-btn.spinning').forEach(function(b) {
     b.classList.remove('spinning');
@@ -782,9 +786,11 @@ function buildCard(track, idx) {
       + (hasWaveform
         ? '<canvas class="waveform-canvas" id="wave-' + sid + '" data-track-id="' + track.id + '" height="36"></canvas>'
         : '<div class="progress-wrap" id="prog-' + sid + '"><div class="progress-fill" id="fill-' + sid + '"></div></div>')
-      + '<div class="player-time" id="time-' + sid + '">0:00</div>'
       + '</div>'
+      + '<div class="player-meta">'
       + '<a class="download-link" href="' + downloadUrl + '" target="_blank">&darr; download</a>'
+      + '<span class="player-time" id="time-' + sid + '"></span>'
+      + '</div>'
       + '</div>'
     : '<div class="no-audio">no audio yet</div>';
 
