@@ -700,7 +700,7 @@ function updateProgress() {
     var waveCanvas = document.getElementById('wave-' + sid);
     if (cardFill) cardFill.style.width = pct + '%';
     if (waveCanvas) drawWaveform(currentTrackId);
-    if (cardTime) cardTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : '';
+    if (cardTime) cardTime.textContent = dur ? (fmt(cur) + ' / ' + fmt(dur)) : (playerState === 'loading' ? 'loading\u2026' : '');
     // Update duration display from playing audio
     if (dur && !durationCache[currentTrackId]) {
       durationCache[currentTrackId] = dur;
