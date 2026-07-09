@@ -4,12 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The AMFAS Music Library &mdash; allmyfriendsaresynths</title>
+<meta name="description" content="Free creative-commons music for independent artists, film-makers, and vloggers. Browse, preview, and download tracks by allmyfriendsaresynths.">
+<link rel="canonical" href="https://musiclibrary.allmyfriendsaresynths.com/">
+<meta name="version" content="1.0.1">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="The AMFAS Music Library">
 <meta property="og:description" content="Free creative-commons music for independent artists, film-makers, and vloggers. Browse, preview, and download tracks by allmyfriendsaresynths.">
-<meta property="og:url" content="https://clickysteve.github.io/amfas-music-library/">
+<meta property="og:url" content="https://musiclibrary.allmyfriendsaresynths.com/">
 <meta property="og:image" content="https://torch-jumbo-a57.notion.site/image/attachment%3Abcca6a02-6ef4-4456-9676-0a4dc0cdfafb%3Aamfaslogo2_copy.png?id=1aa9e578-d459-80da-9b93-e7f346f89c07&table=block&spaceId=b2cdeeaf-ac10-4648-b22a-71fb48a05239&width=512&userId=&cache=v2">
 <meta property="og:site_name" content="allmyfriendsaresynths">
 
@@ -163,7 +166,7 @@
 
 <header>
   <div class="header-top">
-    <a href="https://clickysteve.github.io/amfas-music-library/" class="header-identity" style="text-decoration:none;color:inherit;-webkit-text-fill-color:inherit;">
+    <a href="https://musiclibrary.allmyfriendsaresynths.com/" class="header-identity" style="text-decoration:none;color:inherit;-webkit-text-fill-color:inherit;">
       <img class="logo-circle" src="https://torch-jumbo-a57.notion.site/image/attachment%3Abcca6a02-6ef4-4456-9676-0a4dc0cdfafb%3Aamfaslogo2_copy.png?id=1aa9e578-d459-80da-9b93-e7f346f89c07&table=block&spaceId=b2cdeeaf-ac10-4648-b22a-71fb48a05239&width=250&userId=&cache=v2" alt="allmyfriendsaresynths logo">
       <div>
         <div class="site-label">allmyfriendsaresynths // music library</div>
@@ -181,7 +184,7 @@
     </div>
     <div class="header-video">
       <div class="video-wrap">
-        <iframe src="https://www.youtube.com/embed/QPvn3aL2x0o" title="allmyfriendsaresynths" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe src="https://www.youtube.com/embed/QPvn3aL2x0o" title="allmyfriendsaresynths" loading="lazy" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
     </div>
   </div>
@@ -227,7 +230,8 @@
   <div>
     <strong>Source</strong><br>
     Data live from <a href="https://torch-jumbo-a57.notion.site/The-AMFAS-Music-Library-1aa9e578d45980da9b93e7f346f89c07" target="_blank">Notion database</a><br>
-    Updated automatically. Everything subject to change.
+    Updated automatically. Everything subject to change.<br>
+    Site v1.0.1 &middot; <a href="https://github.com/clickysteve/amfas-music-library/blob/main/CHANGELOG.md" target="_blank">changelog</a>
   </div>
   <div>
     <strong>License</strong><br>
@@ -307,11 +311,29 @@ function isNew(track) {
 }
 function toStreamUrl(url) {
   if (!url) return null;
-  return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[&?]dl=\d/, '');
+  try {
+    var u = new URL(url);
+    if (u.hostname === 'www.dropbox.com') u.hostname = 'dl.dropboxusercontent.com';
+    u.searchParams.delete('dl');
+    return u.toString();
+  } catch(e) {
+    return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[&?]dl=\d/, '');
+  }
 }
 function toDownloadUrl(url) {
   if (!url) return null;
-  return url.replace('dl=0', 'dl=1');
+  try {
+    var u = new URL(url);
+    u.searchParams.set('dl', '1');
+    return u.toString();
+  } catch(e) {
+    return url.replace('dl=0', 'dl=1');
+  }
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
 }
 function fmt(s) {
   if (!s || !isFinite(s)) return '0:00';
@@ -321,7 +343,7 @@ function safeId(id) { return id.replace(/-/g, '').slice(0, 20); }
 function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 }
-function trackHash(id) { return id.replace(/-/g, '').slice(0, 5); }
+function trackHash(id) { return id.replace(/-/g, '').slice(0, 8); }
 function trackPermalink(track) {
   var slug = slugify(track.finalName || track.title);
   return '#amfas-' + trackHash(track.id) + '-' + slug;
@@ -346,13 +368,22 @@ function setWaveformCache(trackId, points) {
 // ── WAVEFORM GENERATION ───────────────────────────────────────
 var audioCtx = null;
 var waveformPending = {};
+var WAVEFORM_MAX_BYTES = 30 * 1024 * 1024; // don't re-download huge WAVs just to draw bars
 function generateWaveform(trackId) {
   if (waveformPending[trackId] || getWaveformCache(trackId)) return;
   var track = TRACKS.find(function(t) { return t.id === trackId; });
   if (!track || !track.audio) return;
   waveformPending[trackId] = true;
   var url = toStreamUrl(track.audio);
-  fetch(url).then(function(res) { return res.arrayBuffer(); }).then(function(buf) {
+  // Size-check first: waveform generation downloads the whole file a second
+  // time (the <audio> element streams its own copy), so skip oversized files.
+  fetch(url, { method: 'HEAD' })
+    .then(function(res) { return parseInt(res.headers.get('content-length') || '0', 10); })
+    .catch(function() { return 0; }) // HEAD blocked? fall through and try anyway
+    .then(function(size) {
+      if (size > WAVEFORM_MAX_BYTES) throw new Error('file too large for waveform');
+      return fetch(url);
+    }).then(function(res) { return res.arrayBuffer(); }).then(function(buf) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return audioCtx.decodeAudioData(buf);
   }).then(function(decoded) {
@@ -557,6 +588,7 @@ function playTrack(trackId) {
       return;
     }
     if (playerState === 'loading') {
+      globalAudio.oncanplay = null;
       globalAudio.pause();
       globalAudio.removeAttribute('src');
       globalAudio.load();
@@ -584,23 +616,26 @@ function playTrack(trackId) {
 
   globalAudio.src = toStreamUrl(track.audio);
 
-  // Generate waveform in background if not cached
-  generateWaveform(trackId);
-
   function onCanPlay() {
-    globalAudio.removeEventListener('canplay', onCanPlay);
+    globalAudio.oncanplay = null;
     if (playerState !== 'loading' || currentTrackId !== trackId) return;
     globalAudio.play().then(function() {
       playerState = 'playing';
       updateAllUI();
       startAnimLoop();
+      // Generate waveform in background once playback has started,
+      // so the (potentially large) analysis download doesn't compete
+      // with getting audio out of the speakers.
+      generateWaveform(trackId);
     }).catch(function() {
       playerState = 'idle';
       currentTrackId = null;
       updateAllUI();
     });
   }
-  globalAudio.addEventListener('canplay', onCanPlay);
+  // Property assignment (not addEventListener) so rapid track switches
+  // replace the pending handler instead of accumulating stale ones.
+  globalAudio.oncanplay = onCanPlay;
   globalAudio.load();
 }
 
@@ -649,6 +684,7 @@ function stopPlayback() {
     var stopTimeEl = document.getElementById('time-' + safeId(currentTrackId));
     if (stopTimeEl) stopTimeEl.textContent = '';
   }
+  globalAudio.oncanplay = null;
   globalAudio.pause();
   globalAudio.removeAttribute('src');
   globalAudio.load();
@@ -660,15 +696,22 @@ function stopPlayback() {
 
 // ── AUDIO EVENTS ───────────────────────────────────────────────
 globalAudio.addEventListener('ended', function() {
+  // Mark as paused first so auto-advance behaves: if the current track is
+  // the only audible one, playTrack's toggle branch calls play(), which
+  // restarts an ended track from the beginning instead of pausing it.
+  playerState = 'paused';
+  stopAnimLoop();
+  updateAllUI();
   skipTrack(1); // auto-advance
 });
 
 globalAudio.addEventListener('error', function() {
-  if (playerState === 'loading') {
-    playerState = 'idle';
-    updateAllUI();
-    stopAnimLoop();
-  }
+  // Reset the UI whatever state we were in: a network drop mid-playback
+  // used to leave the player stuck showing "playing" on dead audio.
+  if (playerState === 'idle') return;
+  playerState = 'idle';
+  stopAnimLoop();
+  updateAllUI();
 });
 
 // ── ANIMATION LOOP ─────────────────────────────────────────────
@@ -780,12 +823,13 @@ function buildCard(track, idx) {
   var sid = safeId(track.id);
   var streamUrl = toStreamUrl(track.audio);
   var downloadUrl = toDownloadUrl(track.audio);
-  var displayTitle = track.finalName || track.title;
+  var displayTitle = escapeHtml(track.finalName || track.title);
   var newBadge = isNew(track) ? '<span class="tag badge-new">NEW</span>' : '';
   var feelTags = (track.feel || []).slice(0, 5).map(function(f) {
-    return '<span class="tag tag-feel" data-feel="' + f.toLowerCase() + '" title="Click to filter by ' + f + '">' + f + '</span>';
+    var ef = escapeHtml(f);
+    return '<span class="tag tag-feel" data-feel="' + escapeHtml(f.toLowerCase()) + '" title="Click to filter by ' + ef + '">' + ef + '</span>';
   }).join('');
-  var gearStr = (track.gear || []).join(', ');
+  var gearStr = (track.gear || []).map(escapeHtml).join(', ');
   var favActive = isFav(track.id) ? ' is-fav' : '';
 
   var hasWaveform = getWaveformCache(track.id);
@@ -805,7 +849,7 @@ function buildCard(track, idx) {
 
   var actionsRow = '<div class="track-actions">'
     + '<button class="action-btn copy-link-btn" data-track-id="' + track.id + '" title="Copy link to this track"># link</button>'
-    + '<button class="action-btn copy-credit-btn" data-track-name="' + displayTitle.replace(/"/g, '&quot;') + '" title="Copy credit line to clipboard">&#x2398; credit</button>'
+    + '<button class="action-btn copy-credit-btn" data-track-name="' + displayTitle + '" title="Copy credit line to clipboard">&#x2398; credit</button>'
     + '<button class="action-btn fav-btn' + favActive + '" data-track-id="' + track.id + '" title="' + (isFav(track.id) ? 'Remove from favourites' : 'Add to favourites') + '">' + (isFav(track.id) ? '&#9829;' : '&#9825;') + '</button>'
     + '</div>';
 
@@ -846,11 +890,15 @@ function handleDeepLink() {
   var hash = window.location.hash;
   if (!hash) return;
   var track = null;
-  // New format: #amfas-{5char}-{slug}
+  // Format: #amfas-{hash}-{slug}, where hash is a prefix of the track id.
+  // Accepts both current 8-char and legacy 5-char hashes.
   if (hash.startsWith('#amfas-')) {
-    var rest = hash.slice(7); // after '#amfas-'
-    var h = rest.slice(0, 5);
-    track = TRACKS.find(function(t) { return trackHash(t.id) === h; });
+    var h = hash.slice(7).split('-')[0].toLowerCase();
+    if (h.length >= 5) {
+      track = TRACKS.find(function(t) {
+        return t.id.replace(/-/g, '').toLowerCase().indexOf(h) === 0;
+      });
+    }
   }
   // Legacy format: #t-{safeId}
   else if (hash.startsWith('#t-')) {
@@ -910,9 +958,11 @@ function loadTracks() {
 }
 
 // ── SEARCH ─────────────────────────────────────────────────────
+var searchDebounce = null;
 document.getElementById('search').addEventListener('input', function(e) {
   currentSearch = e.target.value;
-  render();
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(render, 120); // debounce: don't rebuild the grid per keystroke
 });
 
 // ── FILTER BUTTONS ─────────────────────────────────────────────
@@ -951,6 +1001,7 @@ miniProg.addEventListener('click', function(e) {
   if (!globalAudio.duration) return;
   var rect = miniProg.getBoundingClientRect();
   globalAudio.currentTime = ((e.clientX - rect.left) / rect.width) * globalAudio.duration;
+  updateProgress(); // reflect the seek immediately, even while paused
 });
 
 // ── KEYBOARD SHORTCUTS ─────────────────────────────────────────
@@ -985,6 +1036,7 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
     if (waveCanvas.id === 'wave-' + wsid) {
       var wrect = waveCanvas.getBoundingClientRect();
       globalAudio.currentTime = ((e.clientX - wrect.left) / wrect.width) * globalAudio.duration;
+      updateProgress(); // reflect the seek immediately, even while paused
     }
     return;
   }
@@ -996,6 +1048,7 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
     if (progWrap.id === 'prog-' + sid && globalAudio.duration) {
       var rect = progWrap.getBoundingClientRect();
       globalAudio.currentTime = ((e.clientX - rect.left) / rect.width) * globalAudio.duration;
+      updateProgress(); // reflect the seek immediately, even while paused
     }
     return;
   }

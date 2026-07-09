@@ -4,7 +4,9 @@ A publicly shared database of music created by **Stephen McLeod** (aka *allmyfri
 
 All tracks are free for non-commercial use under a [Creative Commons CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) license, provided you credit **Stephen McLeod aka allmyfriendsaresynths** and link back to the site.
 
-**Live site:** [clickysteve.github.io/amfas-music-library](https://clickysteve.github.io/amfas-music-library/)
+**Live site:** [musiclibrary.allmyfriendsaresynths.com](https://musiclibrary.allmyfriendsaresynths.com/)
+
+**Version:** 1.0.1 ([changelog](CHANGELOG.md))
 
 ## Features
 
