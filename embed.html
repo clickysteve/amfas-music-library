@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMFAS Music Library embed</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { --bg: #0c0a07; --card: #1a1608; --border: #322d18; --text: #f0ede4; --muted: #8a8470; --acid: #ffaa00; --hot: #ff4400; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font-family: 'Space Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 13px; overflow: hidden; }
+  .embed { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 0.45rem; padding: 0.7rem 1rem; border: 1px solid var(--border); }
+  .row { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+  .play { width: 40px; height: 40px; border-radius: 50%; background: var(--acid); border: none; color: #000; font-size: 15px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: transform 0.15s, opacity 0.15s; }
+  .play:hover { opacity: 0.85; transform: scale(1.06); }
+  .info { min-width: 0; flex: 1; }
+  .title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .credit { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .credit a { color: var(--acid); text-decoration: none; }
+  .credit a:hover { text-decoration: underline; }
+  .time { font-size: 10px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+  canvas.wave { width: 100%; height: 30px; cursor: pointer; display: block; }
+  .prog { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; cursor: pointer; align-self: center; }
+  .prog > div { height: 100%; width: 0; background: var(--acid); }
+  .msg { color: var(--muted); text-align: center; padding: 1rem; font-size: 12px; }
+  .msg.error { color: var(--hot); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinning { display: inline-block; animation: spin 1s linear infinite; }
+</style>
+</head>
+<body>
+<div class="embed" id="app"><div class="msg">loading&hellip;</div></div>
+<script>
+var API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
+var SITE_URL = 'https://musiclibrary.allmyfriendsaresynths.com/';
+
+var TRACK = null;
+var BAKED = null;
+var audio = new Audio();
+audio.preload = 'none';
+var state = 'idle';
+var rafId = null;
+
+function fmt(s) {
+  if (!s || !isFinite(s)) return '0:00';
+  return Math.floor(s / 60) + ':' + Math.floor(s % 60).toString().padStart(2, '0');
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function toStreamUrl(url) {
+  if (!url) return null;
+  try {
+    var u = new URL(url);
+    if (u.hostname === 'www.dropbox.com') u.hostname = 'dl.dropboxusercontent.com';
+    u.searchParams.delete('dl');
+    return u.toString();
+  } catch(e) {
+    return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[&?]dl=\d/, '');
+  }
+}
+function showMsg(text, isError) {
+  document.getElementById('app').innerHTML = '<div class="msg' + (isError ? ' error' : '') + '">' + text + '</div>';
+}
+
+function findTrack(tracks) {
+  var hash = window.location.hash;
+  if (!hash || !hash.startsWith('#amfas-')) return null;
+  var h = hash.slice(7).split('-')[0].toLowerCase();
+  if (h.length < 5) return null;
+  return tracks.find(function(t) {
+    return t.id.replace(/-/g, '').toLowerCase().indexOf(h) === 0;
+  }) || null;
+}
+
+function renderPlayer() {
+  var name = TRACK.finalName || TRACK.title;
+  var permalink = SITE_URL + '#amfas-' + TRACK.id.replace(/-/g, '').slice(0, 8);
+  var points = BAKED && BAKED[TRACK.id] && BAKED[TRACK.id].w;
+  var dur = BAKED && BAKED[TRACK.id] && BAKED[TRACK.id].d;
+  document.getElementById('app').innerHTML =
+    '<div class="row">'
+    + '<button class="play" id="play" title="Play / Pause">&#9654;</button>'
+    + '<div class="info">'
+    + '<div class="title">' + escapeHtml(name) + '</div>'
+    + '<div class="credit">by <a href="' + permalink + '" target="_blank" rel="noopener">allmyfriendsaresynths</a> &middot; CC BY-NC-SA 4.0 &middot; <a href="' + SITE_URL + '" target="_blank" rel="noopener">music library &#x2197;</a></div>'
+    + '</div>'
+    + '<span class="time" id="time">' + (dur ? '0:00 / ' + fmt(dur) : '') + '</span>'
+    + '</div>'
+    + '<div class="row">'
+    + (points ? '<canvas class="wave" id="wave"></canvas>' : '<div class="prog" id="prog"><div id="fill"></div></div>')
+    + '</div>';
+
+  document.getElementById('play').addEventListener('click', toggle);
+  var seekEl = document.getElementById(points ? 'wave' : 'prog');
+  seekEl.addEventListener('click', function(e) {
+    if (!audio.duration) return;
+    var rect = seekEl.getBoundingClientRect();
+    audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+    draw();
+  });
+  if (points) draw();
+}
+
+function toggle() {
+  if (state === 'playing') { audio.pause(); state = 'paused'; setBtn(); stopLoop(); return; }
+  if (state === 'paused') { audio.play(); state = 'playing'; setBtn(); startLoop(); return; }
+  if (state === 'idle') {
+    state = 'loading';
+    setBtn();
+    audio.src = toStreamUrl(TRACK.audio);
+    audio.oncanplay = function() {
+      audio.oncanplay = null;
+      if (state !== 'loading') return;
+      audio.play().then(function() { state = 'playing'; setBtn(); startLoop(); })
+        .catch(function() { state = 'idle'; setBtn(); });
+    };
+    audio.load();
+  }
+}
+audio.addEventListener('ended', function() { state = 'paused'; setBtn(); stopLoop(); draw(); });
+audio.addEventListener('error', function() {
+  if (state === 'idle') return;
+  state = 'idle';
+  setBtn();
+  stopLoop();
+});
+
+function setBtn() {
+  var btn = document.getElementById('play');
+  if (!btn) return;
+  btn.classList.toggle('spinning', state === 'loading');
+  btn.innerHTML = state === 'playing' ? '&#9646;&#9646;' : (state === 'loading' ? '&#x21BB;' : '&#9654;');
+}
+
+function startLoop() {
+  if (rafId) return;
+  (function loop() { draw(); rafId = requestAnimationFrame(loop); })();
+}
+function stopLoop() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+}
+
+function draw() {
+  var dur = audio.duration || (BAKED && BAKED[TRACK.id] && BAKED[TRACK.id].d) || 0;
+  var pct = dur ? (audio.currentTime || 0) / dur : 0;
+  var timeEl = document.getElementById('time');
+  if (timeEl) timeEl.textContent = dur ? (fmt(audio.currentTime || 0) + ' / ' + fmt(dur)) : '';
+  var fill = document.getElementById('fill');
+  if (fill) fill.style.width = (pct * 100) + '%';
+  var canvas = document.getElementById('wave');
+  if (!canvas) return;
+  var points = BAKED[TRACK.id].w;
+  var dpr = window.devicePixelRatio || 1;
+  var w = canvas.offsetWidth || 300;
+  var h = 30;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  var gap = w / points.length;
+  var barW = Math.max(1, gap - 0.5);
+  ctx.clearRect(0, 0, w, h);
+  for (var i = 0; i < points.length; i++) {
+    var barH = Math.max(2, points[i] * (h - 4));
+    ctx.fillStyle = (i / points.length <= pct) ? '#ffaa00' : 'rgba(50,45,24,0.8)';
+    ctx.fillRect(i * gap, (h - barH) / 2, barW, barH);
+  }
+}
+window.addEventListener('resize', draw);
+
+// ── INIT ───────────────────────────────────────────────────────
+Promise.all([
+  fetch(API_URL).then(function(r) { if (!r.ok) throw new Error('API error ' + r.status); return r.json(); }),
+  fetch('waveforms.json').then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; })
+]).then(function(results) {
+  BAKED = results[1] || {};
+  TRACK = findTrack(results[0].tracks || []);
+  if (!TRACK || !TRACK.audio) { showMsg('Track not found.', true); return; }
+  renderPlayer();
+}).catch(function() {
+  showMsg('Could not load track.', true);
+});
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ All tracks are free for non-commercial use under a [Creative Commons CC BY-NC-SA
 
 **Live site:** [musiclibrary.allmyfriendsaresynths.com](https://musiclibrary.allmyfriendsaresynths.com/)
 
-**Version:** 2.1 ([changelog](CHANGELOG.md))
+**Version:** 2.2 ([changelog](CHANGELOG.md))
 
 ## Features
 
@@ -15,7 +15,13 @@ All tracks are free for non-commercial use under a [Creative Commons CC BY-NC-SA
 - **Search** — filter tracks by name, gear, or feel in real-time
 - **Tag filtering** — preset filter buttons (Electronic, Ambient, Dark, Glitchy, Has Vocals, Has Audio) plus clickable tags on each track card for ad-hoc filtering
 - **Download links** — direct Dropbox download links for each track
-- **Single-file deployment** — the entire front-end is one `index.html` file hosted on GitHub Pages, no build step required
+- **Instant waveforms & durations** — pre-baked into `waveforms.json` by `tools/generate_waveforms.py`, so no client-side audio decoding is needed
+- **Duration filter** — filter tracks by length (under 2 min / 2-4 min / over 4 min)
+- **Shareable views & favourites** — search, filter, and sort state lives in the URL, and favourites can be shared as a link others can import
+- **"More like this"** — tag-based suggestions on the currently playing track
+- **Embed widget** — every track has a copy-paste iframe embed (`embed.html`) for use on other sites
+- **Media Session support** — lock-screen and hardware-key playback controls
+- **No build step** — plain static files hosted on GitHub Pages
 
 ## Architecture
 

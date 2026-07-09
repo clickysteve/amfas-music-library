@@ -5,6 +5,32 @@ Versioning is semantic-ish: patch bump for bug fixes and tweaks, minor bump
 for new features. The current version is declared in `index.html` (a
 `<meta name="version">` tag and the footer) and in `README.md`.
 
+## [2.2] - 2026-07-09
+
+Feature release.
+
+### Added
+- Pre-baked waveforms and durations: `tools/generate_waveforms.py` analyses
+  every track via ffmpeg and writes `waveforms.json` (served from this repo),
+  so visitors get instant waveforms and durations with no client-side audio
+  decoding or double-downloading. Client-side generation remains as a
+  fallback for unbaked tracks.
+- Embed widget: new `embed.html` renders a minimal single-track player for
+  iframes, and every track card has a "</> embed" button that copies the
+  embed code.
+- Shareable view state: search, filter, sort, and length choices are
+  reflected in the URL, so any filtered view can be shared as a link.
+- Shareable favourites: a "share favs" button (on the Favs view) copies a
+  link encoding your favourites; recipients get a banner with a one-click
+  "add to my favourites" import.
+- Duration filter: any length / under 2 min / 2-4 min / over 4 min, powered
+  by the baked durations.
+- "More like this": up to three tag-overlap suggestions shown on the
+  currently playing track's card.
+- Media Session API: lock-screen and hardware-key play/pause/next/previous
+  and seek support, with track metadata and artwork.
+- Keyboard: "/" focuses the search box.
+
 ## [2.1] - 2026-07-09
 
 Bug-fix and performance release. No new features.

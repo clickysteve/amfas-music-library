@@ -6,7 +6,7 @@
 <title>The AMFAS Music Library &mdash; allmyfriendsaresynths</title>
 <meta name="description" content="Free creative-commons music for independent artists, film-makers, and vloggers. Browse, preview, and download tracks by allmyfriendsaresynths.">
 <link rel="canonical" href="https://musiclibrary.allmyfriendsaresynths.com/">
-<meta name="version" content="2.1">
+<meta name="version" content="2.2">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
@@ -121,6 +121,14 @@
   .state-message.error { color: var(--hot); }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .spinning { display: inline-block; animation: spin 1s linear infinite; }
+  .similar-row { margin-top: 0.45rem; font-size: 10px; color: var(--muted); letter-spacing: 0.05em; display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+  .similar-btn { background: none; border: 1px solid rgba(0,229,255,0.3); color: var(--cyan); font-family: var(--mono); font-size: 10px; padding: 0.15em 0.5em; cursor: pointer; transition: all 0.15s; }
+  .similar-btn:hover { border-color: var(--cyan); background: rgba(0,229,255,0.1); }
+  .shared-banner { margin: 0 0 1rem; border: 1px solid rgba(0,229,255,0.4); background: rgba(0,229,255,0.06); padding: 0.75rem 1rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; font-size: 12px; color: var(--text); }
+  .shared-banner button { background: none; border: 1px solid var(--border); color: var(--cyan); font-family: var(--mono); font-size: 11px; padding: 0.3em 0.7em; cursor: pointer; transition: border-color 0.15s; }
+  .shared-banner button:hover { border-color: var(--cyan); }
+  .shared-banner .dismiss { border: none; color: var(--muted); font-size: 16px; margin-left: auto; }
+  .shared-banner .dismiss:hover { color: var(--hot); }
 
   /* ── Mini Player ────────────────────────────────────────────── */
   .mini-player { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #0f0d08; border-top: 2px solid var(--border); transform: translateY(100%); transition: transform 0.3s ease; }
@@ -193,7 +201,7 @@
 <div class="controls">
   <div class="search-wrap">
     <span class="search-icon">&#x2315;</span>
-    <input type="text" id="search" placeholder="Search tracks, gear, feel..." autocomplete="off">
+    <input type="text" id="search" placeholder="Search tracks, gear, feel... ( / )" autocomplete="off">
   </div>
   <div class="filter-group">
     <button class="filter-btn" data-filter="all">All</button>
@@ -207,6 +215,13 @@
     <button class="filter-btn" data-filter="favourites">&#9829; Favs</button>
   </div>
   <button class="filter-btn shuffle-btn" id="shuffle-btn" title="Play a random track">&#x21BB; Shuffle</button>
+  <button class="filter-btn share-favs-btn" id="share-favs-btn" title="Copy a link that shares your favourites" style="display:none">&#x2934; share favs</button>
+  <select class="sort-select" id="length-select" title="Filter by track length">
+    <option value="any">Any length</option>
+    <option value="short">&lt; 2 min</option>
+    <option value="med">2&ndash;4 min</option>
+    <option value="long">&gt; 4 min</option>
+  </select>
   <select class="sort-select" id="sort-select" title="Sort tracks">
     <option value="newest">Newest first</option>
     <option value="oldest">Oldest first</option>
@@ -217,7 +232,12 @@
 </div>
 
 <main>
-  <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load &middot; spacebar = play/pause &middot; arrows = skip</div>
+  <div class="loading-note">&#x231B; audio previews are high quality WAV &mdash; may take a moment to load &middot; spacebar = play/pause &middot; arrows = skip &middot; / = search</div>
+  <div class="shared-banner" id="shared-banner" style="display:none">
+    <span id="shared-banner-text"></span>
+    <button id="import-favs-btn">+ add to my favourites</button>
+    <button class="dismiss" id="dismiss-shared-btn" title="Dismiss">&times;</button>
+  </div>
   <div class="tracks-grid" id="tracks-grid"></div>
 </main>
 
@@ -231,7 +251,7 @@
     <strong>Source</strong><br>
     Data live from <a href="https://torch-jumbo-a57.notion.site/The-AMFAS-Music-Library-1aa9e578d45980da9b93e7f346f89c07" target="_blank">Notion database</a><br>
     Updated automatically. Everything subject to change.<br>
-    Site v2.1 &middot; <a href="https://github.com/clickysteve/amfas-music-library/blob/main/CHANGELOG.md" target="_blank">changelog</a>
+    Site v2.2 &middot; <a href="https://github.com/clickysteve/amfas-music-library/blob/main/CHANGELOG.md" target="_blank">changelog</a>
   </div>
   <div>
     <strong>License</strong><br>
@@ -263,6 +283,8 @@
 <script>
 // ── CONFIG ─────────────────────────────────────────────────────
 var API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
+var SITE_URL = 'https://musiclibrary.allmyfriendsaresynths.com/';
+var LOGO_URL = 'https://torch-jumbo-a57.notion.site/image/attachment%3Abcca6a02-6ef4-4456-9676-0a4dc0cdfafb%3Aamfaslogo2_copy.png?id=1aa9e578-d459-80da-9b93-e7f346f89c07&table=block&spaceId=b2cdeeaf-ac10-4648-b22a-71fb48a05239&width=250&userId=&cache=v2';
 var COLOURS = ['#ffaa00','#ff4400','#ffcc00','#ff7700','#ff2255','#ffdd44','#ff5500','#ffbb33'];
 var NEW_DAYS = 30;
 
@@ -271,6 +293,8 @@ var TRACKS = [];
 var currentFilter = 'has-audio';
 var currentSearch = '';
 var currentSort = 'newest';
+var currentLength = 'any';
+var sharedFavIds = null; // track ids from a shared-favourites link, or null
 var currentTrackId = null;
 var playerState = 'idle'; // idle | loading | playing | paused
 var animFrameId = null;
@@ -349,6 +373,23 @@ function trackPermalink(track) {
   return '#amfas-' + trackHash(track.id) + '-' + slug;
 }
 
+// ── PRE-BAKED WAVEFORMS & DURATIONS ───────────────────────────
+// waveforms.json lives in this repo (generated by tools/generate_waveforms.py)
+// and maps track id -> { d: duration seconds, w: [200 normalized points] }.
+// Baked data is authoritative; localStorage + client-side generation remain
+// as fallbacks for tracks that haven't been baked yet.
+var BAKED = {};
+function loadBaked() {
+  return fetch('waveforms.json')
+    .then(function(res) { if (!res.ok) throw new Error('no baked data'); return res.json(); })
+    .then(function(data) { BAKED = data || {}; })
+    .catch(function() { BAKED = {}; });
+}
+function getKnownDuration(trackId) {
+  if (BAKED[trackId] && BAKED[trackId].d) return BAKED[trackId].d;
+  return durationCache[trackId] || null;
+}
+
 // ── WAVEFORM CACHE ────────────────────────────────────────────
 var waveformCache = {};
 (function loadWaveformCache() {
@@ -358,6 +399,7 @@ var waveformCache = {};
   } catch(e) {}
 })();
 function getWaveformCache(trackId) {
+  if (BAKED[trackId] && BAKED[trackId].w) return BAKED[trackId].w;
   return waveformCache[trackId] || null;
 }
 function setWaveformCache(trackId, points) {
@@ -510,9 +552,10 @@ function loadDuration(trackId) {
   var sid = safeId(trackId);
   var durEl = document.getElementById('dur-' + sid);
 
-  // Check cache first
-  if (durationCache[trackId]) {
-    if (durEl) durEl.textContent = fmt(durationCache[trackId]);
+  // Check baked data / cache first
+  var known = getKnownDuration(trackId);
+  if (known) {
+    if (durEl) durEl.textContent = fmt(known);
     return;
   }
 
@@ -559,11 +602,60 @@ function getFiltered() {
     if (currentFilter === 'has-audio') filterMatch = !!t.audio;
     else if (currentFilter === 'has-vocals') filterMatch = t.hasVocals;
     else if (currentFilter === 'favourites') filterMatch = favs.indexOf(t.id) !== -1;
+    else if (currentFilter === 'shared') filterMatch = !!(sharedFavIds && sharedFavIds.indexOf(t.id) !== -1);
     else if (currentFilter === 'new') filterMatch = isNew(t);
     else if (currentFilter !== 'all') filterMatch = (t.feel || []).some(function(f) { return f.toLowerCase() === currentFilter; });
-    return searchMatch && filterMatch;
+    var lengthMatch = true;
+    if (currentLength !== 'any') {
+      var d = getKnownDuration(t.id);
+      if (!d) lengthMatch = false; // unknown duration can't be proven to match
+      else if (currentLength === 'short') lengthMatch = d < 120;
+      else if (currentLength === 'med') lengthMatch = d >= 120 && d <= 240;
+      else if (currentLength === 'long') lengthMatch = d > 240;
+    }
+    return searchMatch && filterMatch && lengthMatch;
   });
   return getSorted(filtered);
+}
+
+// ── SHAREABLE VIEW STATE (URL params) ──────────────────────────
+function syncViewUrl() {
+  var params = new URLSearchParams();
+  if (currentSearch) params.set('q', currentSearch);
+  if (currentFilter === 'shared' && sharedFavIds) {
+    params.set('favs', sharedFavIds.map(trackHash).join('.'));
+  } else if (currentFilter !== 'has-audio') {
+    params.set('filter', currentFilter);
+  }
+  if (currentSort !== 'newest') params.set('sort', currentSort);
+  if (currentLength !== 'any') params.set('len', currentLength);
+  var qs = params.toString();
+  history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+}
+
+function applyViewParams() {
+  var params = new URLSearchParams(window.location.search);
+  var q = params.get('q');
+  if (q) {
+    currentSearch = q;
+    document.getElementById('search').value = q;
+  }
+  var f = params.get('filter');
+  if (f && f !== 'shared') currentFilter = f;
+  var s = params.get('sort');
+  if (s && ['newest','oldest','az','za'].indexOf(s) !== -1) {
+    currentSort = s;
+    document.getElementById('sort-select').value = s;
+  }
+  var len = params.get('len');
+  if (len && ['short','med','long'].indexOf(len) !== -1) {
+    currentLength = len;
+    document.getElementById('length-select').value = len;
+  }
+  // Reflect the filter in the button row (tag filters may have no button)
+  document.querySelectorAll('.filter-btn[data-filter]').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.filter === currentFilter);
+  });
 }
 
 // ── PLAYER ─────────────────────────────────────────────────────
@@ -613,6 +705,7 @@ function playTrack(trackId) {
   currentTrackId = trackId;
   playerState = 'loading';
   updateAllUI();
+  updateMediaSession(track);
 
   globalAudio.src = toStreamUrl(track.audio);
 
@@ -714,6 +807,37 @@ globalAudio.addEventListener('error', function() {
   updateAllUI();
 });
 
+// ── MEDIA SESSION (lock screen / hardware keys) ────────────────
+function updateMediaSession(track) {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.finalName || track.title,
+      artist: 'allmyfriendsaresynths',
+      album: 'The AMFAS Music Library',
+      artwork: [{ src: LOGO_URL, sizes: '250x250', type: 'image/png' }]
+    });
+  } catch(e) {}
+}
+if ('mediaSession' in navigator) {
+  try {
+    navigator.mediaSession.setActionHandler('play', function() {
+      if (playerState === 'paused') togglePlayPause();
+    });
+    navigator.mediaSession.setActionHandler('pause', function() {
+      if (playerState === 'playing') togglePlayPause();
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', function() { skipTrack(-1); });
+    navigator.mediaSession.setActionHandler('nexttrack', function() { skipTrack(1); });
+    navigator.mediaSession.setActionHandler('seekto', function(details) {
+      if (globalAudio.duration && details.seekTime != null) {
+        globalAudio.currentTime = details.seekTime;
+        updateProgress();
+      }
+    });
+  } catch(e) {}
+}
+
 // ── ANIMATION LOOP ─────────────────────────────────────────────
 function startAnimLoop() {
   if (animFrameId) return;
@@ -814,7 +938,51 @@ function updateAllUI() {
     }
   }
 
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.playbackState = playerState === 'playing' ? 'playing' : (playerState === 'paused' ? 'paused' : 'none');
+  }
+
+  syncSimilarRow();
+
   updateProgress();
+}
+
+// ── MORE LIKE THIS ─────────────────────────────────────────────
+function getSimilar(trackId, n) {
+  var track = TRACKS.find(function(t) { return t.id === trackId; });
+  if (!track) return [];
+  var feel = (track.feel || []).map(function(f) { return f.toLowerCase(); });
+  var scored = [];
+  TRACKS.forEach(function(t) {
+    if (t.id === trackId || !t.audio) return;
+    var overlap = (t.feel || []).filter(function(f) { return feel.indexOf(f.toLowerCase()) !== -1; }).length;
+    var score = overlap + ((!!t.hasVocals === !!track.hasVocals) ? 0.25 : 0);
+    if (overlap > 0) scored.push({ t: t, s: score });
+  });
+  scored.sort(function(a, b) { return b.s - a.s; });
+  return scored.slice(0, n).map(function(x) { return x.t; });
+}
+
+function syncSimilarRow() {
+  var currentCardId = currentTrackId ? 'card-' + safeId(currentTrackId) : null;
+  var active = currentTrackId && playerState !== 'idle';
+  // Remove rows that don't belong on the current card
+  document.querySelectorAll('.similar-row').forEach(function(el) {
+    var c = el.closest('.track-card');
+    if (!active || !c || c.id !== currentCardId) el.remove();
+  });
+  if (!active) return;
+  var card = document.getElementById(currentCardId);
+  if (!card || card.querySelector('.similar-row')) return;
+  var sims = getSimilar(currentTrackId, 3);
+  if (!sims.length) return;
+  var div = document.createElement('div');
+  div.className = 'similar-row';
+  div.innerHTML = 'more like this &rarr; ' + sims.map(function(s) {
+    return '<button class="similar-btn" data-track-id="' + s.id + '">' + escapeHtml(s.finalName || s.title) + '</button>';
+  }).join('');
+  var main = card.querySelector('.track-main');
+  if (main) main.appendChild(div);
 }
 
 // ── CARD BUILDER ───────────────────────────────────────────────
@@ -850,6 +1018,7 @@ function buildCard(track, idx) {
   var actionsRow = '<div class="track-actions">'
     + '<button class="action-btn copy-link-btn" data-track-id="' + track.id + '" title="Copy link to this track"># link</button>'
     + '<button class="action-btn copy-credit-btn" data-track-name="' + displayTitle + '" title="Copy credit line to clipboard">&#x2398; credit</button>'
+    + (streamUrl ? '<button class="action-btn copy-embed-btn" data-track-id="' + track.id + '" title="Copy embed code for your own site">&lt;/&gt; embed</button>' : '')
     + '<button class="action-btn fav-btn' + favActive + '" data-track-id="' + track.id + '" title="' + (isFav(track.id) ? 'Remove from favourites' : 'Add to favourites') + '">' + (isFav(track.id) ? '&#9829;' : '&#9825;') + '</button>'
     + '</div>';
 
@@ -876,13 +1045,17 @@ function render() {
   // Set up duration loading and draw cached waveforms
   setupDurationObserver();
   drawAllWaveforms();
-  // Show cached durations immediately
+  // Show known (baked or cached) durations immediately
   filtered.forEach(function(t) {
-    if (durationCache[t.id]) {
+    var known = getKnownDuration(t.id);
+    if (known) {
       var durEl = document.getElementById('dur-' + safeId(t.id));
-      if (durEl) durEl.textContent = fmt(durationCache[t.id]);
+      if (durEl) durEl.textContent = fmt(known);
     }
   });
+  // Share-favourites button is only relevant on the Favs view
+  var sfb = document.getElementById('share-favs-btn');
+  if (sfb) sfb.style.display = (currentFilter === 'favourites' && getFavs().length > 0) ? '' : 'none';
 }
 
 // ── DEEP LINKS ─────────────────────────────────────────────────
@@ -909,13 +1082,16 @@ function handleDeepLink() {
   // Silently update URL to current friendly format
   var canonical = trackPermalink(track);
   if (hash !== canonical) {
-    history.replaceState(null, '', canonical);
+    history.replaceState(null, '', window.location.pathname + window.location.search + canonical);
   }
-  // Switch to "all" filter so the linked track is visible
-  currentFilter = 'all';
-  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-  var allBtn = document.querySelector('.filter-btn[data-filter="all"]');
-  if (allBtn) allBtn.classList.add('active');
+  // Switch to "all" filter so the linked track is visible, unless the URL
+  // carries an explicit view state (shared filter link) to respect.
+  if (!window.location.search) {
+    currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    var allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+    if (allBtn) allBtn.classList.add('active');
+  }
   render();
   var card = document.getElementById('card-' + safeId(track.id));
   if (card) {
@@ -943,7 +1119,8 @@ function loadTracks() {
     .then(function(data) {
       if (data.error) throw new Error(data.error);
       TRACKS = data.tracks;
-      // Check for deep link
+      // Shared favourites link takes precedence, then track deep links
+      if (handleSharedFavs()) return;
       if (window.location.hash && (window.location.hash.startsWith('#amfas-') || window.location.hash.startsWith('#t-'))) {
         handleDeepLink();
       } else {
@@ -962,7 +1139,7 @@ var searchDebounce = null;
 document.getElementById('search').addEventListener('input', function(e) {
   currentSearch = e.target.value;
   clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(render, 120); // debounce: don't rebuild the grid per keystroke
+  searchDebounce = setTimeout(function() { render(); syncViewUrl(); }, 120); // debounce: don't rebuild the grid per keystroke
 });
 
 // ── FILTER BUTTONS ─────────────────────────────────────────────
@@ -972,6 +1149,7 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
     btn.classList.add('active');
     currentFilter = btn.dataset.filter;
     render();
+    syncViewUrl();
   });
 });
 
@@ -979,11 +1157,69 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
 document.getElementById('sort-select').addEventListener('change', function(e) {
   currentSort = e.target.value;
   render();
+  syncViewUrl();
+});
+
+// ── LENGTH FILTER ──────────────────────────────────────────────
+document.getElementById('length-select').addEventListener('change', function(e) {
+  currentLength = e.target.value;
+  render();
+  syncViewUrl();
 });
 
 // ── SHUFFLE BUTTON ─────────────────────────────────────────────
 document.getElementById('shuffle-btn').addEventListener('click', function() {
   shufflePlay();
+});
+
+// ── SHAREABLE FAVOURITES ───────────────────────────────────────
+document.getElementById('share-favs-btn').addEventListener('click', function() {
+  var favs = getFavs();
+  if (!favs.length) return;
+  var btn = this;
+  var url = window.location.origin + window.location.pathname + '?favs=' + favs.map(trackHash).join('.');
+  navigator.clipboard.writeText(url).then(function() {
+    btn.textContent = '✓ link copied';
+    setTimeout(function() { btn.innerHTML = '&#x2934; share favs'; }, 2000);
+  }).catch(function() {});
+});
+
+function handleSharedFavs() {
+  var params = new URLSearchParams(window.location.search);
+  var favsParam = params.get('favs');
+  if (!favsParam) return false;
+  var hashes = favsParam.split('.').filter(Boolean).map(function(h) { return h.toLowerCase(); });
+  var matched = TRACKS.filter(function(t) { return hashes.indexOf(trackHash(t.id).toLowerCase()) !== -1; });
+  if (!matched.length) return false;
+  sharedFavIds = matched.map(function(t) { return t.id; });
+  currentFilter = 'shared';
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  var banner = document.getElementById('shared-banner');
+  document.getElementById('shared-banner-text').textContent =
+    'Someone shared ' + matched.length + ' favourite track' + (matched.length === 1 ? '' : 's') + ' with you.';
+  banner.style.display = '';
+  render();
+  return true;
+}
+
+document.getElementById('import-favs-btn').addEventListener('click', function() {
+  if (!sharedFavIds) return;
+  var favs = getFavs();
+  sharedFavIds.forEach(function(id) { if (favs.indexOf(id) === -1) favs.push(id); });
+  setFavs(favs);
+  this.textContent = '✓ added to your favourites';
+  render();
+});
+
+document.getElementById('dismiss-shared-btn').addEventListener('click', function() {
+  sharedFavIds = null;
+  document.getElementById('shared-banner').style.display = 'none';
+  currentFilter = 'has-audio';
+  document.querySelectorAll('.filter-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.filter === 'has-audio');
+  });
+  render();
+  syncViewUrl();
 });
 
 // ── MINI-PLAYER CONTROLS ───────────────────────────────────────
@@ -1008,6 +1244,11 @@ miniProg.addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   // Ignore if typing in an input
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.key === '/') {
+    e.preventDefault();
+    document.getElementById('search').focus();
+    return;
+  }
   if (e.code === 'Space') {
     e.preventDefault();
     if (playerState === 'loading') {
@@ -1062,6 +1303,7 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
     if (matchBtn) matchBtn.classList.add('active');
     currentFilter = feel;
     render();
+    syncViewUrl();
     document.querySelector('.controls').scrollIntoView({ behavior: 'smooth' });
     return;
   }
@@ -1079,6 +1321,22 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
     return;
   }
 
+  // Copy embed code button
+  var embedBtn = e.target.closest('.copy-embed-btn');
+  if (embedBtn) {
+    var embedTrack = TRACKS.find(function(t) { return t.id === embedBtn.dataset.trackId; });
+    if (!embedTrack) return;
+    var embedUrl = SITE_URL + 'embed.html' + trackPermalink(embedTrack);
+    var embedTitle = (embedTrack.finalName || embedTrack.title).replace(/"/g, '&quot;');
+    var code = '<iframe src="' + embedUrl + '" width="100%" height="132" style="border:0;max-width:560px" title="' + embedTitle + ' | AMFAS Music Library" loading="lazy"></iframe>';
+    navigator.clipboard.writeText(code).then(function() {
+      embedBtn.classList.add('copied');
+      embedBtn.textContent = '✓ copied';
+      setTimeout(function() { embedBtn.classList.remove('copied'); embedBtn.innerHTML = '&lt;/&gt; embed'; }, 2000);
+    }).catch(function() {});
+    return;
+  }
+
   // Copy credit button
   var copyBtn = e.target.closest('.copy-credit-btn');
   if (copyBtn) {
@@ -1089,6 +1347,16 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
       copyBtn.innerHTML = '&#x2713; copied';
       setTimeout(function() { copyBtn.classList.remove('copied'); copyBtn.innerHTML = '&#x2398; credit'; }, 2000);
     });
+    return;
+  }
+
+  // "More like this" suggestion
+  var simBtn = e.target.closest('.similar-btn[data-track-id]');
+  if (simBtn) {
+    var simId = simBtn.dataset.trackId;
+    playTrack(simId);
+    var simCard = document.getElementById('card-' + safeId(simId));
+    if (simCard) simCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
@@ -1111,7 +1379,8 @@ window.addEventListener('hashchange', function() {
 });
 
 // ── INIT ───────────────────────────────────────────────────────
-loadTracks();
+applyViewParams();
+loadBaked().then(loadTracks);
 </script>
 </body>
 </html>
