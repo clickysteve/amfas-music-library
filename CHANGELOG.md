@@ -5,6 +5,17 @@ Versioning is semantic-ish: patch bump for bug fixes and tweaks, minor bump
 for new features. The current version is declared in `index.html` (a
 `<meta name="version">` tag and the footer) and in `README.md`.
 
+## [2.2.1] - 2026-07-09
+
+### Added
+- "Back to top" button: appears bottom-right after scrolling down, smooth
+  scrolls back up, and shifts up out of the way when the mini player is open.
+
+### Changed
+- Re-baked waveforms.json: 4 previously dead Dropbox links were fixed and
+  their tracks now have waveforms/durations (184 of 186 baked). Still dead:
+  "woop wahp euro" and "tbd".
+
 ## [2.2] - 2026-07-09
 
 Feature release.

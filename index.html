@@ -6,7 +6,7 @@
 <title>The AMFAS Music Library &mdash; allmyfriendsaresynths</title>
 <meta name="description" content="Free creative-commons music for independent artists, film-makers, and vloggers. Browse, preview, and download tracks by allmyfriendsaresynths.">
 <link rel="canonical" href="https://musiclibrary.allmyfriendsaresynths.com/">
-<meta name="version" content="2.2">
+<meta name="version" content="2.2.1">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
@@ -148,6 +148,10 @@
   .mini-close:hover { color: var(--hot); }
   .kbd-hint { font-size: 9px; color: var(--border); letter-spacing: 0.08em; position: absolute; right: 2rem; bottom: calc(100% + 0.3rem); pointer-events: none; }
 
+  .top-btn { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 150; width: 42px; height: 42px; border-radius: 50%; background: var(--card); border: 1px solid var(--border); color: var(--acid); font-family: var(--mono); font-size: 16px; cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity 0.25s, transform 0.25s, border-color 0.15s, background 0.15s, bottom 0.3s; }
+  .top-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .top-btn:hover { border-color: var(--acid); background: #211a08; }
+  body.has-mini-player .top-btn { bottom: calc(72px + 2rem); }
   footer { border-top: 1px solid var(--border); padding: 2rem; margin-top: 3rem; color: var(--muted); font-size: 11px; line-height: 1.8; display: flex; flex-wrap: wrap; gap: 1rem 3rem; justify-content: space-between; }
   footer a { color: var(--cyan); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
@@ -251,7 +255,7 @@
     <strong>Source</strong><br>
     Data live from <a href="https://torch-jumbo-a57.notion.site/The-AMFAS-Music-Library-1aa9e578d45980da9b93e7f346f89c07" target="_blank">Notion database</a><br>
     Updated automatically. Everything subject to change.<br>
-    Site v2.2 &middot; <a href="https://github.com/clickysteve/amfas-music-library/blob/main/CHANGELOG.md" target="_blank">changelog</a>
+    Site v2.2.1 &middot; <a href="https://github.com/clickysteve/amfas-music-library/blob/main/CHANGELOG.md" target="_blank">changelog</a>
   </div>
   <div>
     <strong>License</strong><br>
@@ -259,6 +263,8 @@
     Non-commercial use with credit. No political use without permission.
   </div>
 </footer>
+
+<button class="top-btn" id="top-btn" title="Back to top" aria-label="Back to top">&uarr;</button>
 
 <!-- ── Mini Player ──────────────────────────────────────────────── -->
 <div class="mini-player" id="mini-player">
@@ -1371,6 +1377,21 @@ document.getElementById('tracks-grid').addEventListener('click', function(e) {
     if (currentFilter === 'favourites' && !nowFav) render();
     return;
   }
+});
+
+// ── BACK TO TOP ────────────────────────────────────────────────
+var topBtn = document.getElementById('top-btn');
+var topBtnTick = false;
+window.addEventListener('scroll', function() {
+  if (topBtnTick) return;
+  topBtnTick = true;
+  requestAnimationFrame(function() {
+    topBtn.classList.toggle('visible', window.scrollY > 600);
+    topBtnTick = false;
+  });
+}, { passive: true });
+topBtn.addEventListener('click', function() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 // ── HASH CHANGE ────────────────────────────────────────────────

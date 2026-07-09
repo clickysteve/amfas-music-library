@@ -6,7 +6,7 @@ All tracks are free for non-commercial use under a [Creative Commons CC BY-NC-SA
 
 **Live site:** [musiclibrary.allmyfriendsaresynths.com](https://musiclibrary.allmyfriendsaresynths.com/)
 
-**Version:** 2.2 ([changelog](CHANGELOG.md))
+**Version:** 2.2.1 ([changelog](CHANGELOG.md))
 
 ## Features
 
