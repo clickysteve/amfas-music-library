@@ -5,7 +5,7 @@ Versioning is semantic-ish: patch bump for bug fixes and tweaks, minor bump
 for new features. The current version is declared in `index.html` (a
 `<meta name="version">` tag and the footer) and in `README.md`.
 
-## [1.0.1] - 2026-07-09
+## [2.1] - 2026-07-09
 
 Bug-fix and performance release. No new features.
 
@@ -39,7 +39,7 @@ Bug-fix and performance release. No new features.
   keystroke.
 - The YouTube embed lazy-loads instead of loading with the page.
 
-## [1.0.0] - baseline (2026-07 and earlier)
+## [2.0] - baseline (2026-07 and earlier)
 
 Everything before the changelog existed: single-file static site on GitHub
 Pages, live track data from Notion via a Cloudflare Worker, search, tag
