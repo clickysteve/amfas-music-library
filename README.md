@@ -6,7 +6,7 @@ All tracks are free for non-commercial use under a [Creative Commons CC BY-NC-SA
 
 **Live site:** [musiclibrary.allmyfriendsaresynths.com](https://musiclibrary.allmyfriendsaresynths.com/)
 
-**Version:** 2.2.1 ([changelog](CHANGELOG.md))
+**Version:** 2.3 ([changelog](CHANGELOG.md))
 
 ## Features
 
@@ -16,6 +16,10 @@ All tracks are free for non-commercial use under a [Creative Commons CC BY-NC-SA
 - **Tag filtering** — preset filter buttons (Electronic, Ambient, Dark, Glitchy, Has Vocals, Has Audio) plus clickable tags on each track card for ad-hoc filtering
 - **Download links** — direct Dropbox download links for each track
 - **Instant waveforms & durations** — pre-baked into `waveforms.json` by `tools/generate_waveforms.py`, so no client-side audio decoding is needed
+- **Audio analysis** — BPM, musical key, loudness, and energy for every track, baked into `analysis.json` by `tools/generate_analysis.py`; powers card badges, BPM/energy sorting, and key search
+- **Sound Map** — `map.html` lays the whole library out as an explorable 2D map (t-SNE over timbre/harmony/rhythm features) where similar-sounding tracks cluster; click to preview
+- **"Sounds like" suggestions** — real audio similarity (cosine over analysis features) on the playing track, with tag overlap as fallback
+- **Self-maintaining** — a weekly GitHub Action checks every audio link, bakes data for new tracks, and commits the results; Playwright tests run on every push
 - **Duration filter** — filter tracks by length (under 2 min / 2-4 min / over 4 min)
 - **Shareable views & favourites** — search, filter, and sort state lives in the URL, and favourites can be shared as a link others can import
 - **"More like this"** — tag-based suggestions on the currently playing track

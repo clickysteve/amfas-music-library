@@ -5,6 +5,34 @@ Versioning is semantic-ish: patch bump for bug fixes and tweaks, minor bump
 for new features. The current version is declared in `index.html` (a
 `<meta name="version">` tag and the footer) and in `README.md`.
 
+## [2.3] - 2026-07-10
+
+Feature release: the library learned what it sounds like.
+
+### Added
+- Audio analysis: `tools/generate_analysis.py` analyses every track (BPM,
+  musical key + confidence, integrated loudness, RMS energy, brightness,
+  and a 45-dim timbre/harmony/rhythm fingerprint) and bakes the results
+  into `analysis.json`. 184 of 186 tracks analysed.
+- BPM and key badges on every track card, "BPM: slow to fast" and
+  "Energy: high to low" sort options, and search now matches musical keys
+  ("A minor") and BPM ("120 bpm").
+- Sound Map (`map.html`): the whole library as an explorable 2D map
+  (t-SNE over the audio fingerprints) where similar-sounding tracks sit
+  together. Pan/zoom, hover tooltips, click to preview, cyan links to the
+  selected track's closest sonic neighbours. Linked from the controls bar.
+- "Sounds like" suggestions: the more-like-this row now uses real audio
+  similarity (cosine over the fingerprints), falling back to tag overlap
+  for unanalysed tracks.
+- Weekly maintenance GitHub Action (`.github/workflows/maintain.yml`):
+  checks every Dropbox audio link (opens an issue if any are dead), bakes
+  waveforms + analysis for new tracks, and commits the results. The site
+  now maintains itself when tracks are added in Notion.
+- Playwright test suite (`tests/site.spec.js`): 13 hermetic tests covering
+  rendering, search, filters, sorting, playback, favourites, deep links,
+  shareable state, the embed widget, and the sound map. Runs on every push
+  via `.github/workflows/test.yml`.
+
 ## [2.2.1] - 2026-07-09
 
 ### Added

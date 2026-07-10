@@ -1,0 +1,71 @@
+name: Weekly maintenance
+
+# Self-maintaining pipeline: checks every Dropbox audio link, bakes waveforms
+# and audio analysis for any new tracks, and commits the results (which
+# redeploys the site via GitHub Pages). Add tracks in Notion; this keeps the
+# site's baked data in sync on its own.
+
+on:
+  schedule:
+    - cron: "17 5 * * 1" # Mondays 05:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+
+      - name: Install Python dependencies
+        run: pip install -q numpy scipy librosa pyloudnorm scikit-learn
+
+      - name: Check audio links
+        id: links
+        run: |
+          set +e
+          python3 tools/check_links.py | tee link_report.md
+          echo "dead=$?" >> "$GITHUB_OUTPUT"
+          cat link_report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open issue for dead links
+        if: steps.links.outputs.dead == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(gh issue list --state open --search 'Dead audio links detected in:title' --json number --jq '.[0].number')" ]; then
+            gh issue create --title "Dead audio links detected" \
+              --body-file link_report.md
+          else
+            echo "Open dead-links issue already exists; skipping."
+          fi
+
+      - name: Bake waveforms (incremental)
+        run: python3 tools/generate_waveforms.py --workers 6 || true
+
+      - name: Bake audio analysis (incremental)
+        run: python3 tools/generate_analysis.py --workers 6 || true
+
+      - name: Commit updated data
+        run: |
+          rm -f link_report.md
+          git config user.name "amfas-maintenance-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add waveforms.json analysis.json tools/features.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+          else
+            git commit -m "chore: weekly bake (waveforms + analysis)"
+            git push
+          fi

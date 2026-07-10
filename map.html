@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sound Map &mdash; The AMFAS Music Library</title>
+<meta name="description" content="Explore the AMFAS Music Library as a map: sonically similar tracks cluster together. Click to preview.">
+<link rel="canonical" href="https://musiclibrary.allmyfriendsaresynths.com/map.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0a07; --surface: #131108; --card: #1a1608; --border: #322d18;
+    --text: #f0ede4; --muted: #8a8470; --acid: #ffaa00; --hot: #ff4400;
+    --cyan: #00e5ff; --mono: 'Space Mono', monospace; --display: 'Unbounded', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--mono); }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 999; opacity: 0.5; }
+
+  .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.25rem; padding: 0.7rem 1.25rem; background: rgba(12,10,7,0.85); border-bottom: 1px solid var(--border); backdrop-filter: blur(4px); }
+  .topbar a.back { color: var(--acid); text-decoration: none; font-size: 12px; letter-spacing: 0.06em; }
+  .topbar a.back:hover { text-decoration: underline; }
+  .topbar h1 { font-family: var(--display); font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .hint { color: var(--muted); font-size: 10px; letter-spacing: 0.05em; }
+  .legend { display: flex; align-items: center; gap: 0.45rem; font-size: 10px; color: var(--muted); letter-spacing: 0.05em; margin-left: auto; }
+  .legend .ramp { width: 90px; height: 8px; border: 1px solid var(--border); background: linear-gradient(90deg, #4a3a10, #8a6300, #c48700, #ffaa00, #ffc963); }
+  .legend .dotsizes { display: flex; align-items: center; gap: 0.25rem; }
+  .legend .dotsizes i { display: inline-block; border-radius: 50%; background: var(--muted); opacity: 0.7; }
+
+  #map { position: fixed; inset: 0; cursor: grab; touch-action: none; }
+  #map.dragging { cursor: grabbing; }
+
+  .tooltip { position: fixed; z-index: 30; pointer-events: none; background: var(--card); border: 1px solid var(--acid); padding: 0.45rem 0.7rem; font-size: 11px; max-width: 260px; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+  .tooltip .tt-title { font-family: var(--display); font-size: 12px; font-weight: 700; margin-bottom: 0.15rem; }
+  .tooltip .tt-meta { color: var(--muted); font-size: 10px; letter-spacing: 0.05em; }
+
+  .zoomctl { position: fixed; right: 1rem; top: 50%; transform: translateY(-50%); z-index: 20; display: flex; flex-direction: column; gap: 0.4rem; }
+  .zoomctl button { width: 36px; height: 36px; background: var(--card); border: 1px solid var(--border); color: var(--acid); font-family: var(--mono); font-size: 16px; cursor: pointer; border-radius: 3px; transition: border-color 0.15s; }
+  .zoomctl button:hover { border-color: var(--acid); }
+
+  .panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: #0f0d08; border-top: 2px solid var(--border); padding: 0.7rem 1.25rem; display: none; align-items: center; gap: 1rem; }
+  .panel.active { display: flex; }
+  .panel .p-play { width: 40px; height: 40px; border-radius: 50%; background: var(--acid); border: none; color: #000; font-size: 14px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .panel .p-play:hover { opacity: 0.85; }
+  .panel .p-info { min-width: 0; flex: 1; }
+  .panel .p-title { font-family: var(--display); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .panel .p-meta { color: var(--muted); font-size: 10px; letter-spacing: 0.05em; margin-top: 0.15rem; }
+  .panel .p-meta b { color: #887755; font-weight: 400; }
+  .panel a.p-open { color: var(--cyan); font-size: 11px; text-decoration: none; white-space: nowrap; }
+  .panel a.p-open:hover { text-decoration: underline; }
+  .panel .p-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+  .panel .p-close:hover { color: var(--hot); }
+
+  .state-message { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: var(--muted); font-size: 13px; z-index: 10; text-align: center; padding: 2rem; }
+  .state-message.error { color: var(--hot); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinning { display: inline-block; animation: spin 1s linear infinite; font-size: 2rem; }
+
+  @media (max-width: 700px) {
+    .legend { display: none; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="./">&larr; library</a>
+  <h1>Sound Map</h1>
+  <span class="hint">tracks that sound alike sit together &middot; scroll to zoom &middot; drag to pan &middot; click to listen</span>
+  <div class="legend">
+    <span>quiet</span><span class="ramp"></span><span>loud</span>
+    <span class="dotsizes"><i style="width:5px;height:5px"></i><i style="width:9px;height:9px"></i></span>
+    <span>short &rarr; long</span>
+  </div>
+</div>
+
+<canvas id="map"></canvas>
+<div class="tooltip" id="tooltip"></div>
+<div class="zoomctl">
+  <button id="zoom-in" title="Zoom in">+</button>
+  <button id="zoom-out" title="Zoom out">&minus;</button>
+  <button id="zoom-fit" title="Reset view">&#x2302;</button>
+</div>
+
+<div class="panel" id="panel">
+  <button class="p-play" id="p-play">&#9654;</button>
+  <div class="p-info">
+    <div class="p-title" id="p-title"></div>
+    <div class="p-meta" id="p-meta"></div>
+  </div>
+  <a class="p-open" id="p-open" href="./" title="Open this track in the library">open in library &#x2197;</a>
+  <button class="p-close" id="p-close" title="Close">&times;</button>
+</div>
+
+<div class="state-message" id="state"><span class="spinning">&#x21BB;</span>loading the map&hellip;</div>
+
+<script>
+var API_URL = 'https://amfas-tracks.allmyfas.workers.dev';
+
+// Sequential energy ramp: one hue, dark -> light on the dark surface
+var RAMP = ['#4a3a10', '#8a6300', '#c48700', '#ffaa00', '#ffc963'];
+
+var NODES = [];          // { t, x, y, r, color, energyRank }
+var byId = {};
+var selected = null;
+var hovered = null;
+
+var canvas = document.getElementById('map');
+var ctx = canvas.getContext('2d');
+var tooltip = document.getElementById('tooltip');
+var dpr = window.devicePixelRatio || 1;
+var W = 0, H = 0;
+
+// View transform: screen = world * k + t
+var k = 1, tx = 0, ty = 0;
+var MARGIN = 70;
+
+var audio = new Audio();
+audio.preload = 'none';
+var audioState = 'idle';
+
+function fmt(s) {
+  if (!s || !isFinite(s)) return '';
+  return Math.floor(s / 60) + ':' + Math.floor(s % 60).toString().padStart(2, '0');
+}
+function keyLabel(a) {
+  if (!a || !a.key || (a.keyConf || 0) < 0.4) return null;
+  return a.key.replace(' major', ' maj').replace(' minor', ' min');
+}
+function trackHash(id) { return id.replace(/-/g, '').slice(0, 8); }
+
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+
+function fitView() {
+  k = 1; tx = 0; ty = 0;
+  draw();
+}
+
+function worldX(n) { return MARGIN + n.x * (W - MARGIN * 2); }
+function worldY(n) { return (H - MARGIN * 2) * n.y + MARGIN + 20; }
+function screenX(n) { return worldX(n) * k + tx; }
+function screenY(n) { return worldY(n) * k + ty; }
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Similarity links for the selected track
+  if (selected) {
+    var simIds = selected.t.analysis.sim || [];
+    ctx.strokeStyle = 'rgba(0,229,255,0.35)';
+    ctx.lineWidth = 1;
+    simIds.forEach(function(id) {
+      var n2 = byId[id];
+      if (!n2) return;
+      ctx.beginPath();
+      ctx.moveTo(screenX(selected), screenY(selected));
+      ctx.lineTo(screenX(n2), screenY(n2));
+      ctx.stroke();
+    });
+  }
+
+  var showLabels = k >= 2.3;
+  NODES.forEach(function(n) {
+    var x = screenX(n), y = screenY(n);
+    if (x < -20 || x > W + 20 || y < -20 || y > H + 20) return;
+    var r = n.r * Math.sqrt(k);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = n.color;
+    ctx.fill();
+    if (n === selected || n === hovered) {
+      ctx.beginPath();
+      ctx.arc(x, y, r + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = n === selected ? '#00e5ff' : '#f0ede4';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    if (showLabels || n === selected || n === hovered) {
+      ctx.font = '10px "Space Mono", monospace';
+      ctx.fillStyle = 'rgba(240,237,228,0.75)';
+      ctx.fillText(n.t.name, x + r + 5, y + 3);
+    }
+  });
+}
+
+function nodeAt(px, py) {
+  var best = null, bestD = 14 * 14;
+  NODES.forEach(function(n) {
+    var dx = screenX(n) - px, dy = screenY(n) - py;
+    var d = dx * dx + dy * dy;
+    var hit = Math.max(10, n.r * Math.sqrt(k) + 4);
+    if (d < Math.min(bestD, hit * hit)) { best = n; bestD = d; }
+  });
+  return best;
+}
+
+// ── INTERACTION ────────────────────────────────────────────────
+var dragging = false, moved = false, lastX = 0, lastY = 0;
+canvas.addEventListener('pointerdown', function(e) {
+  dragging = true; moved = false;
+  lastX = e.clientX; lastY = e.clientY;
+  canvas.classList.add('dragging');
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', function(e) {
+  if (dragging) {
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+    tx += dx; ty += dy;
+    lastX = e.clientX; lastY = e.clientY;
+    draw();
+    return;
+  }
+  var n = nodeAt(e.clientX, e.clientY);
+  if (n !== hovered) { hovered = n; draw(); }
+  if (n) {
+    var a = n.t.analysis;
+    var bits = [];
+    if (a.bpm) bits.push(Math.round(a.bpm) + ' bpm');
+    var kl = keyLabel(a);
+    if (kl) bits.push(kl);
+    if (n.t.duration) bits.push(fmt(n.t.duration));
+    tooltip.innerHTML = '<div class="tt-title">' + n.t.nameHtml + '</div><div class="tt-meta">' + bits.join(' &middot; ') + '</div>';
+    tooltip.style.display = 'block';
+    tooltip.style.left = Math.min(e.clientX + 14, window.innerWidth - 280) + 'px';
+    tooltip.style.top = (e.clientY + 14) + 'px';
+    canvas.style.cursor = 'pointer';
+  } else {
+    tooltip.style.display = 'none';
+    canvas.style.cursor = dragging ? 'grabbing' : 'grab';
+  }
+});
+canvas.addEventListener('pointerup', function(e) {
+  dragging = false;
+  canvas.classList.remove('dragging');
+  if (moved) return;
+  var n = nodeAt(e.clientX, e.clientY);
+  if (n) selectNode(n, true);
+});
+canvas.addEventListener('wheel', function(e) {
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, Math.pow(1.0015, -e.deltaY));
+}, { passive: false });
+
+function zoomAt(px, py, factor) {
+  var newK = Math.max(0.5, Math.min(12, k * factor));
+  factor = newK / k;
+  tx = px - (px - tx) * factor;
+  ty = py - (py - ty) * factor;
+  k = newK;
+  draw();
+}
+document.getElementById('zoom-in').addEventListener('click', function() { zoomAt(W / 2, H / 2, 1.4); });
+document.getElementById('zoom-out').addEventListener('click', function() { zoomAt(W / 2, H / 2, 1 / 1.4); });
+document.getElementById('zoom-fit').addEventListener('click', fitView);
+window.addEventListener('resize', resize);
+
+// ── SELECTION + PREVIEW ────────────────────────────────────────
+function toStreamUrl(url) {
+  if (!url) return null;
+  try {
+    var u = new URL(url);
+    if (u.hostname === 'www.dropbox.com') u.hostname = 'dl.dropboxusercontent.com';
+    u.searchParams.delete('dl');
+    return u.toString();
+  } catch(e) {
+    return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[&?]dl=\d/, '');
+  }
+}
+
+function selectNode(n, autoplay) {
+  selected = n;
+  var a = n.t.analysis;
+  document.getElementById('p-title').textContent = n.t.name;
+  var bits = [];
+  if (a.bpm) bits.push('<b>' + Math.round(a.bpm) + ' bpm</b>');
+  var kl = keyLabel(a);
+  if (kl) bits.push('<b>' + kl + '</b>');
+  if (n.t.duration) bits.push(fmt(n.t.duration));
+  bits.push('cyan lines = sounds most alike');
+  document.getElementById('p-meta').innerHTML = bits.join(' &middot; ');
+  document.getElementById('p-open').href = './#amfas-' + trackHash(n.t.id);
+  document.getElementById('panel').classList.add('active');
+  draw();
+  if (autoplay) playSelected(true);
+}
+
+function playSelected(restart) {
+  if (!selected) return;
+  var btn = document.getElementById('p-play');
+  if (restart) {
+    audio.src = toStreamUrl(selected.t.audio);
+    audioState = 'loading';
+    btn.innerHTML = '&#x21BB;';
+    btn.classList.add('spinning');
+    audio.oncanplay = function() {
+      audio.oncanplay = null;
+      if (audioState !== 'loading') return;
+      audio.play().then(function() {
+        audioState = 'playing';
+        btn.classList.remove('spinning');
+        btn.innerHTML = '&#9646;&#9646;';
+      }).catch(function() { resetBtn(); });
+    };
+    audio.load();
+    return;
+  }
+  if (audioState === 'playing') { audio.pause(); audioState = 'paused'; btn.innerHTML = '&#9654;'; }
+  else if (audioState === 'paused') { audio.play(); audioState = 'playing'; btn.innerHTML = '&#9646;&#9646;'; }
+  else playSelected(true);
+}
+function resetBtn() {
+  audioState = 'idle';
+  var btn = document.getElementById('p-play');
+  btn.classList.remove('spinning');
+  btn.innerHTML = '&#9654;';
+}
+audio.addEventListener('ended', resetBtn);
+audio.addEventListener('error', function() { if (audioState !== 'idle') resetBtn(); });
+
+document.getElementById('p-play').addEventListener('click', function() { playSelected(false); });
+document.getElementById('p-close').addEventListener('click', function() {
+  document.getElementById('panel').classList.remove('active');
+  audio.pause();
+  resetBtn();
+  selected = null;
+  draw();
+});
+
+// ── LOAD ───────────────────────────────────────────────────────
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+Promise.all([
+  fetch(API_URL).then(function(r) { if (!r.ok) throw new Error('API ' + r.status); return r.json(); }),
+  fetch('analysis.json').then(function(r) { if (!r.ok) throw new Error('no analysis.json'); return r.json(); }),
+  fetch('waveforms.json').then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; })
+]).then(function(res) {
+  var tracks = res[0].tracks || [];
+  var analysis = res[1];
+  var waveforms = res[2] || {};
+
+  var placed = tracks.filter(function(t) {
+    return t.audio && analysis[t.id] && analysis[t.id].xy;
+  });
+  if (!placed.length) throw new Error('no mapped tracks');
+
+  // Energy percentile rank -> ramp step (sequential: magnitude only)
+  var rmsSorted = placed.map(function(t) { return analysis[t.id].rms || 0; }).sort(function(a, b) { return a - b; });
+  function energyRank(v) {
+    var i = 0;
+    while (i < rmsSorted.length && rmsSorted[i] < v) i++;
+    return i / Math.max(1, rmsSorted.length - 1);
+  }
+
+  NODES = placed.map(function(t) {
+    var a = analysis[t.id];
+    var dur = (waveforms[t.id] && waveforms[t.id].d) || 0;
+    var rank = energyRank(a.rms || 0);
+    return {
+      t: {
+        id: t.id,
+        name: t.finalName || t.title,
+        nameHtml: escapeHtml(t.finalName || t.title),
+        audio: t.audio,
+        duration: dur,
+        analysis: a
+      },
+      x: a.xy[0],
+      y: a.xy[1],
+      r: 3.5 + Math.sqrt(Math.min(dur, 480)) * 0.22,
+      color: RAMP[Math.min(RAMP.length - 1, Math.floor(rank * RAMP.length))]
+    };
+  });
+  NODES.forEach(function(n) { byId[n.t.id] = n; });
+
+  document.getElementById('state').style.display = 'none';
+  resize();
+}).catch(function(err) {
+  var st = document.getElementById('state');
+  st.classList.add('error');
+  st.innerHTML = '&#x26A0; Could not load the map.<br><small>' + escapeHtml(err.message) + '</small>';
+});
+</script>
+</body>
+</html>

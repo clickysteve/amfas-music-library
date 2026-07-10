@@ -1,0 +1,12 @@
+{
+  "name": "amfas-music-library",
+  "version": "2.3.0",
+  "private": true,
+  "description": "Static front-end, baked-data tools, and tests for the AMFAS Music Library",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
+  }
+}
