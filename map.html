@@ -226,7 +226,6 @@ canvas.addEventListener('pointermove', function(e) {
   if (n) {
     var a = n.t.analysis;
     var bits = [];
-    if (a.bpm) bits.push(Math.round(a.bpm) + ' bpm');
     var kl = keyLabel(a);
     if (kl) bits.push(kl);
     if (n.t.duration) bits.push(fmt(n.t.duration));
@@ -283,7 +282,6 @@ function selectNode(n, autoplay) {
   var a = n.t.analysis;
   document.getElementById('p-title').textContent = n.t.name;
   var bits = [];
-  if (a.bpm) bits.push('<b>' + Math.round(a.bpm) + ' bpm</b>');
   var kl = keyLabel(a);
   if (kl) bits.push('<b>' + kl + '</b>');
   if (n.t.duration) bits.push(fmt(n.t.duration));

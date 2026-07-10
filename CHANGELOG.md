@@ -5,6 +5,15 @@ Versioning is semantic-ish: patch bump for bug fixes and tweaks, minor bump
 for new features. The current version is declared in `index.html` (a
 `<meta name="version">` tag and the footer) and in `README.md`.
 
+## [2.3.1] - 2026-07-10
+
+### Changed
+- Auto-detected BPM is no longer displayed anywhere (card badges, sort
+  option, search, map tooltips/panel): beat tracking proved too unreliable
+  on this material. The values remain in `analysis.json` as rough backend
+  data and still feed the similarity fingerprints and the map layout.
+  Key badges, energy sort, and key search remain.
+
 ## [2.3] - 2026-07-10
 
 Feature release: the library learned what it sounds like.

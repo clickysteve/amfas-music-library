@@ -81,10 +81,11 @@ test('renders the library with the default Has Audio filter', async ({ page }) =
   expect(errors).toEqual([]);
 });
 
-test('shows BPM and key badges from analysis.json', async ({ page }) => {
+test('shows key badges from analysis.json (BPM stays backend-only)', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.track-meta').first()).toContainText('bpm');
-  await expect(page.getByText('90 bpm · A min')).toBeVisible();
+  await expect(page.getByText('A min', { exact: true })).toBeVisible();
+  // Auto-detected BPM is deliberately not displayed anywhere
+  await expect(page.locator('.track-meta', { hasText: 'bpm' })).toHaveCount(0);
 });
 
 test('search matches titles and musical keys', async ({ page }) => {
@@ -97,6 +98,12 @@ test('search matches titles and musical keys', async ({ page }) => {
   await expect(page.locator('.track-card')).toHaveCount(N - 1);
 });
 
+test('sorts by energy, highest RMS first', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#sort-select', 'energy');
+  await expect(page.locator('.track-title').first()).toHaveText('Track11'); // highest rms in fixture
+});
+
 test('tag filter buttons and URL state sync', async ({ page }) => {
   await page.goto('/');
   await page.click('.filter-btn[data-filter="ambient"]');
@@ -106,12 +113,6 @@ test('tag filter buttons and URL state sync', async ({ page }) => {
   await page.goto('/?filter=dark');
   await expect(page.locator('.filter-btn[data-filter="dark"]')).toHaveClass(/active/);
   await expect(page.locator('.track-card')).toHaveCount(1);
-});
-
-test('sorts by BPM ascending', async ({ page }) => {
-  await page.goto('/');
-  await page.selectOption('#sort-select', 'bpm');
-  await expect(page.locator('.track-title').first()).toHaveText('Alpha Dark'); // 90 bpm is lowest
 });
 
 test('duration filter uses baked durations', async ({ page }) => {

@@ -6,7 +6,7 @@
 <title>The AMFAS Music Library &mdash; allmyfriendsaresynths</title>
 <meta name="description" content="Free creative-commons music for independent artists, film-makers, and vloggers. Browse, preview, and download tracks by allmyfriendsaresynths.">
 <link rel="canonical" href="https://musiclibrary.allmyfriendsaresynths.com/">
-<meta name="version" content="2.3">
+<meta name="version" content="2.3.1">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
@@ -233,7 +233,6 @@
     <option value="oldest">Oldest first</option>
     <option value="az">A &rarr; Z</option>
     <option value="za">Z &rarr; A</option>
-    <option value="bpm">BPM: slow &rarr; fast</option>
     <option value="energy">Energy: high &rarr; low</option>
   </select>
   <div class="count-display"><strong id="visible-count">&mdash;</strong> tracks</div>
@@ -259,7 +258,7 @@
     <strong>Source</strong><br>
     Data live from <a href="https://torch-jumbo-a57.notion.site/The-AMFAS-Music-Library-1aa9e578d45980da9b93e7f346f89c07" target="_blank">Notion database</a><br>
     Updated automatically. Everything subject to change.<br>
-    Site v2.3 &middot; <a href="https://github.com/clickysteve/amfas-music-library/blob/main/CHANGELOG.md" target="_blank">changelog</a>
+    Site v2.3.1 &middot; <a href="https://github.com/clickysteve/amfas-music-library/blob/main/CHANGELOG.md" target="_blank">changelog</a>
   </div>
   <div>
     <strong>License</strong><br>
@@ -612,7 +611,6 @@ function getSorted(tracks) {
     case 'oldest': sorted.sort(function(a, b) { return new Date(a.createdAt || 0) - new Date(b.createdAt || 0); }); break;
     case 'az': sorted.sort(function(a, b) { return (a.finalName || a.title).localeCompare(b.finalName || b.title); }); break;
     case 'za': sorted.sort(function(a, b) { return (b.finalName || b.title).localeCompare(a.finalName || a.title); }); break;
-    case 'bpm': sorted.sort(function(a, b) { return metricOf(a, 'bpm', Infinity) - metricOf(b, 'bpm', Infinity); }); break;
     case 'energy': sorted.sort(function(a, b) { return metricOf(b, 'rms', -Infinity) - metricOf(a, 'rms', -Infinity); }); break;
   }
   return sorted;
@@ -628,7 +626,7 @@ function getFiltered() {
   var filtered = TRACKS.filter(function(t) {
     var q = currentSearch.toLowerCase();
     var a = ANALYSIS[t.id];
-    var extra = a ? [a.key, a.bpm ? Math.round(a.bpm) + ' bpm' : null] : [];
+    var extra = a ? [a.key] : [];
     var searchMatch = !q || [t.title, t.finalName].concat(t.feel || []).concat(t.gear || []).concat(extra).filter(Boolean).some(function(s) { return String(s).toLowerCase().includes(q); });
     var filterMatch = true;
     if (currentFilter === 'has-audio') filterMatch = !!t.audio;
@@ -1031,12 +1029,10 @@ function syncSimilarRow() {
 
 // ── CARD BUILDER ───────────────────────────────────────────────
 function analysisBadge(trackId) {
-  var a = ANALYSIS[trackId];
-  if (!a || !a.bpm) return '';
-  var bits = [Math.round(a.bpm) + ' bpm'];
-  var k = keyLabel(a);
-  if (k) bits.push(k);
-  return '<span class="track-meta">' + bits.join(' &middot; ') + '</span>';
+  // Note: auto-detected BPM lives in analysis.json but is NOT shown —
+  // beat tracking is too unreliable on this material. Key only.
+  var k = keyLabel(ANALYSIS[trackId]);
+  return k ? '<span class="track-meta">' + k + '</span>' : '';
 }
 
 function buildCard(track, idx) {
