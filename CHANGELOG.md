@@ -5,6 +5,16 @@ Versioning is semantic-ish: patch bump for bug fixes and tweaks, minor bump
 for new features. The current version is declared in `index.html` (a
 `<meta name="version">` tag and the footer) and in `README.md`.
 
+## [2.4.0] - 2026-08-24
+
+### Added
+- Working title now shown on the card as a small "aka" line under the main
+  title whenever a track has a Final Name set and it differs from the
+  working title. The Final Name (the name of record) still overrides the
+  working title everywhere it's used — card title, sort, search results
+  order, "sounds like" suggestions, embed widget — this just keeps the
+  working title visible for anyone who knows a track by its old name.
+
 ## [2.3.1] - 2026-07-10
 
 ### Changed
